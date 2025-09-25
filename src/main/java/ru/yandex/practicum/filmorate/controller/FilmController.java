@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {
@@ -21,6 +23,7 @@ public class FilmController {
         long id = setFilmId();
         film.setId(id);
         films.put(id, film);
+        log.info("Film created: id={}, name='{}'", id, film.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(film);
     }
 
@@ -28,10 +31,12 @@ public class FilmController {
     public Film update(@PathVariable long id, @RequestBody @Valid Film film) {
         Film existing = films.get(id);
         if (existing == null) {
+            log.warn("Update failed: film {} not found", id);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Film " + id + " not found");
         }
         film.setId(id);
         films.put(id, film);
+        log.info("Film updated: id={}, name='{}'", id, film.getName());
         return film;
     }
 

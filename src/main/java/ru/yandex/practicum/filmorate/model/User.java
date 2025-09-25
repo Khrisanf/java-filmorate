@@ -17,6 +17,7 @@ public class User {
     @NotBlank
     @Email
     private String email;
+    @NotBlank
     @Size(min = 6, max = 20)
     private String login;
     @Size(max = 10)
