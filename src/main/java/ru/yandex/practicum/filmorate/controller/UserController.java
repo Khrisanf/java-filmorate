@@ -25,10 +25,6 @@ public class UserController {
             user.setName(user.getLogin());
             log.debug("User name is blank, fallback to login='{}'", user.getLogin());
         }
-        if (user.getLogin() == null || user.getLogin().isBlank()) {
-            log.debug("User login is blank, fallback to login='{}'", user.getLogin());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Login is blank");
-        }
         int id = setUserId();
         user.setId(id);
         users.put(id, user);

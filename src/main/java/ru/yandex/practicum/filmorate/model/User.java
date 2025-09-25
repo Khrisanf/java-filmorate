@@ -1,9 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.PastOrPresent;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,6 +16,7 @@ public class User {
     private String email;
     @NotBlank
     @Size(min = 6, max = 20)
+    @Pattern(regexp = "^\\S+$", message = "login must not contain spaces")
     private String login;
     @Size(max = 10)
     private String name;

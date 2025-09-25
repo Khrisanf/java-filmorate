@@ -30,7 +30,5 @@ public class Film {
     @NotBefore("1895-12-28")
     private LocalDate releaseDate;
 
-    @NotBlank
-    @Positive
     private Duration duration;
 }
