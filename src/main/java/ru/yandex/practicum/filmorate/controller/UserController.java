@@ -32,20 +32,20 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
-    @PutMapping("/{id}")
-    public User update(@PathVariable int id, @RequestBody @Valid User user) {
-        User existing = users.get(id);
+    @PutMapping
+    public User update(@RequestBody @Valid User user) {
+        User existing = users.get(user.getId());
         if (existing == null) {
-            log.warn("Update failed: user {} not found", id);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User " + id + " not found");
+            log.warn("Update failed: user {} not found", user.getId());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User " + user.getId() + " not found");
         }
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
             log.debug("User name is blank on update, fallback to login='{}'", user.getLogin());
         }
-        user.setId(id);
-        users.put(id, user);
-        log.info("User updated: id={}, login='{}'", id, user.getLogin());
+        user.setId(user.getId());
+        users.put(user.getId(), user);
+        log.info("User updated: id={}, login='{}'", user.getId(), user.getLogin());
         return user;
     }
 
