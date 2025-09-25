@@ -1,13 +1,12 @@
 package ru.yandex.practicum.filmorate;
 
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
+import jakarta.validation.ConstraintViolation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Set;
 
@@ -27,7 +26,7 @@ class FilmValidationTest {
         f.setName("Matrix");
         f.setDescription("A".repeat(200));
         f.setReleaseDate(LocalDate.of(1895, 12, 28));
-        f.setDuration(Duration.ofMinutes(1));
+        f.setDuration(1);
         return f;
     }
 
@@ -59,5 +58,21 @@ class FilmValidationTest {
         f.setReleaseDate(LocalDate.of(1895, 12, 27));
         assertThat(validator.validate(f))
                 .anyMatch(cv -> cv.getPropertyPath().toString().equals("releaseDate"));
+    }
+
+    @Test
+    void zeroDuration_shouldFail() {
+        Film f = validFilm();
+        f.setDuration(0);
+        assertThat(validator.validate(f))
+                .anyMatch(cv -> cv.getPropertyPath().toString().equals("duration"));
+    }
+
+    @Test
+    void negativeDuration_shouldFail() {
+        Film f = validFilm();
+        f.setDuration(-5);
+        assertThat(validator.validate(f))
+                .anyMatch(cv -> cv.getPropertyPath().toString().equals("duration"));
     }
 }
