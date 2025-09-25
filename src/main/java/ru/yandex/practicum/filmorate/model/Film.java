@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 import ru.yandex.practicum.filmorate.validation.NotBefore;
 
-import java.time.Duration;
 import java.time.LocalDate;
 
 
@@ -30,5 +29,6 @@ public class Film {
     @NotBefore("1895-12-28")
     private LocalDate releaseDate;
 
-    private Duration duration;
+    @Positive
+    private Integer duration;
 }

@@ -27,16 +27,16 @@ public class FilmController {
         return ResponseEntity.status(HttpStatus.CREATED).body(film);
     }
 
-    @PutMapping("/{id}")
-    public Film update(@PathVariable long id, @RequestBody @Valid Film film) {
-        Film existing = films.get(id);
+    @PutMapping
+    public Film update(@RequestBody @Valid Film film) {
+        Film existing = films.get(film.getId());
         if (existing == null) {
-            log.warn("Update failed: film {} not found", id);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Film " + id + " not found");
+            log.warn("Update failed: film {} not found", film.getId());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Film " + film.getId() + " not found");
         }
-        film.setId(id);
-        films.put(id, film);
-        log.info("Film updated: id={}, name='{}'", id, film.getName());
+        film.setId(film.getId());
+        films.put(film.getId(), film);
+        log.info("Film updated: id={}, name='{}'", film.getId(), film.getName());
         return film;
     }
 
