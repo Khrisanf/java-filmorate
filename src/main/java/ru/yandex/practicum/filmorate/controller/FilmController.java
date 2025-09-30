@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
@@ -16,11 +16,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/films")
 public class FilmController {
-    Map<Long, Film> films = new HashMap<>();
+    private final Map<Long, Film> films = new HashMap<>();
 
     @PostMapping
     public ResponseEntity<Film> create(@RequestBody @Valid Film film) {
-        long id = setFilmId();
+        long id = getNextId();
         film.setId(id);
         films.put(id, film);
         log.info("Film created: id={}, name='{}'", id, film.getName());
@@ -32,7 +32,7 @@ public class FilmController {
         Film existing = films.get(film.getId());
         if (existing == null) {
             log.warn("Update failed: film {} not found", film.getId());
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Film " + film.getId() + " not found");
+            throw new NotFoundException("Film " + film.getId() + " not found");
         }
         film.setId(film.getId());
         films.put(film.getId(), film);
@@ -41,10 +41,10 @@ public class FilmController {
     }
 
     @GetMapping("/{id}")
-    public Film getOne(@PathVariable long id) {
+    public Film findById(@PathVariable long id) {
         Film film = films.get(id);
         if (film == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Film " + id + " not found");
+            throw new NotFoundException("Film " + film.getId() + " not found");
         }
         return film;
     }
@@ -54,7 +54,7 @@ public class FilmController {
         return films.values();
     }
 
-    private long setFilmId() {
+    private long getNextId() {
         long currentMaxId = films.keySet()
                 .stream()
                 .mapToLong(id -> id)

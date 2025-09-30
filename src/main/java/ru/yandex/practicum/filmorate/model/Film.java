@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import ru.yandex.practicum.filmorate.validation.NotBefore;
+import ru.yandex.practicum.filmorate.validation.AfterInclude;
 
 import java.time.LocalDate;
 
@@ -26,7 +26,7 @@ public class Film {
     private String description;
 
     @PastOrPresent
-    @NotBefore("1895-12-28")
+    @AfterInclude("1895-12-28")
     private LocalDate releaseDate;
 
     @Positive
