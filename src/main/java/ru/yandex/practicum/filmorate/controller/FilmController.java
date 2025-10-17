@@ -20,10 +20,9 @@ public class FilmController {
 
     @PostMapping
     public ResponseEntity<Film> create(@RequestBody @Valid Film film) {
-        long id = getNextId();
-        film.setId(id);
-        films.put(id, film);
-        log.info("Film created: id={}, name='{}'", id, film.getName());
+        film.setId(getNextId());
+        films.put(getNextId(), film);
+        log.info("Film created: id={}, name='{}'", getNextId(), film.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(film);
     }
 

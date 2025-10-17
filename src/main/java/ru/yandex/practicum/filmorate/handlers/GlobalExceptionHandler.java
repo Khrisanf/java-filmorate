@@ -1,42 +1,49 @@
 package ru.yandex.practicum.filmorate.handlers;
 
-import org.springframework.context.support.DefaultMessageSourceResolvable;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.FieldError;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private ErrorResponse body(HttpStatus s, String title, String detail, HttpServletRequest req) {
+        return new ErrorResponse(title, s.value(), detail, req.getRequestURI());
+    }
+
     @ExceptionHandler(NotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, String> handleNotFound(NotFoundException ex) {
-        return Map.of("message", ex.getMessage());
+    public ResponseEntity<ErrorResponse> notFound(NotFoundException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(body(HttpStatus.NOT_FOUND, "Resource not found", ex.getMessage(), req));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> validation = ex.getBindingResult().getFieldErrors().stream()
-                .collect(Collectors.toMap(
-                        FieldError::getField,
-                        DefaultMessageSourceResolvable::getDefaultMessage,
-                        (a, b) -> a
-                ));
-        return Map.of("errors", validation.toString());
+    public ResponseEntity<ErrorResponse> validation(MethodArgumentNotValidException ex, HttpServletRequest req) {
+        String detail = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        return ResponseEntity.badRequest()
+                .body(body(HttpStatus.BAD_REQUEST, "Validation failed", detail, req));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        return Map.of("message", "Parameter '%s' must be a number".formatted(ex.getName()));
+    public ResponseEntity<ErrorResponse> typeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest req) {
+        String expected = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "required type";
+        String detail = "Parameter '%s' must be of type %s".formatted(ex.getName(), expected);
+        return ResponseEntity.badRequest()
+                .body(body(HttpStatus.BAD_REQUEST, "Invalid parameter", detail, req));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> fallback(HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(body(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error", "Internal error", req));
     }
 }
