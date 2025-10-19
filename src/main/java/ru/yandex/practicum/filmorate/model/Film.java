@@ -18,20 +18,15 @@ import java.util.Set;
 @Getter
 @Setter
 public class Film {
+    Set<Long> likes;
     private Long id;
-
     @NotBlank
     private String name;
-
     @Size(max = 200)
     private String description;
-
     @PastOrPresent
     @AfterInclude("1895-12-28")
     private LocalDate releaseDate;
-
     @Positive
     private Integer duration;
-
-    Set<Long> likes;
 }

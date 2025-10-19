@@ -50,7 +50,7 @@ public class FilmController {
         return filmService.findAll();
     }
 
-@DeleteMapping("/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Film> deleteById(@PathVariable long id) {
         filmService.deleteById(id);
         return ResponseEntity.noContent().build();
