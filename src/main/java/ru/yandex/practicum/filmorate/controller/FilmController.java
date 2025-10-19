@@ -2,63 +2,57 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
 
+import java.net.URI;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/films")
+@lombok.RequiredArgsConstructor
 public class FilmController {
-    private final Map<Long, Film> films = new HashMap<>();
+    private final FilmService filmService;
 
     @PostMapping
     public ResponseEntity<Film> create(@RequestBody @Valid Film film) {
-        film.setId(getNextId());
-        films.put(getNextId(), film);
-        log.info("Film created: id={}, name='{}'", getNextId(), film.getName());
-        return ResponseEntity.status(HttpStatus.CREATED).body(film);
+        Film createdFilm = filmService.create(film);
+        log.info("Film created: id={}, name='{}'", createdFilm.getId(), createdFilm.getName());
+        return ResponseEntity
+                .created(URI.create("/films/" + createdFilm.getId()))
+                .body(createdFilm);
     }
 
     @PutMapping
     public Film update(@RequestBody @Valid Film film) {
-        Film existing = films.get(film.getId());
-        if (existing == null) {
-            log.warn("Update failed: film {} not found", film.getId());
-            throw new NotFoundException("Film " + film.getId() + " not found");
+        Film updatedFilm = filmService.update(film);
+        if (updatedFilm == null) {
+            log.warn("Updated failed: film {} not found", film.getId());
         }
-        film.setId(film.getId());
-        films.put(film.getId(), film);
-        log.info("Film updated: id={}, name='{}'", film.getId(), film.getName());
-        return film;
+        log.info("Film updated: id={}", updatedFilm.getId());
+        return updatedFilm;
     }
 
     @GetMapping("/{id}")
-    public Film findById(@PathVariable long id) {
-        Film film = films.get(id);
-        if (film == null) {
-            throw new NotFoundException("Film " + film.getId() + " not found");
+    public Film findById(@PathVariable Long id) {
+        if (id == null) {
+            log.warn("Get one failed: film not found: id={}", id);
         }
-        return film;
+        return filmService.findById(id);
     }
 
     @GetMapping
     public Collection<Film> getAllFilms() {
-        return films.values();
+        log.info("Get all films");
+        return filmService.findAll();
     }
 
-    private long getNextId() {
-        long currentMaxId = films.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+@DeleteMapping("/{id}")
+    public ResponseEntity<Film> deleteById(@PathVariable long id) {
+        filmService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

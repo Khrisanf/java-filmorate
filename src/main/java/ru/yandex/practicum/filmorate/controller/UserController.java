@@ -2,21 +2,21 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 
+import java.net.URI;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/users")
+@lombok.RequiredArgsConstructor
 public class UserController {
-    private final Map<Long, User> users = new HashMap<>();
+    private final UserService userService;
 
 
     @PostMapping
@@ -25,17 +25,15 @@ public class UserController {
             user.setName(user.getLogin());
             log.debug("User name is blank, fallback to login='{}'", user.getLogin());
         }
-        long id = getUserId();
-        user.setId(id);
-        users.put(id, user);
-        log.info("User created: id={}, login='{}'", id, user.getLogin());
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        User createdUser = userService.create(user);
+        return ResponseEntity.created(URI.create("/users/" + createdUser.getId()))
+                .body(createdUser);
     }
 
     @PutMapping
     public User update(@RequestBody @Valid User user) {
-        User existing = users.get(user.getId());
-        if (existing == null) {
+        User updatedUser = userService.update(user);
+        if (updatedUser == null) {
             log.warn("Update failed: user {} not found", user.getId());
             throw new NotFoundException("User " + user.getId() + " not found");
         }
@@ -43,34 +41,24 @@ public class UserController {
             user.setName(user.getLogin());
             log.debug("User name is blank on update, fallback to login='{}'", user.getLogin());
         }
-        user.setId(user.getId());
-        users.put(user.getId(), user);
         log.info("User updated: id={}, login='{}'", user.getId(), user.getLogin());
         return user;
     }
 
     @GetMapping("/{id}")
-    public User findById(@PathVariable int id) {
-        User user = users.get(id);
-        if (user == null) {
-            log.warn("Get one failed: user {} not found", id);
-            throw new NotFoundException("User " + id + " not found");
-        }
-        return user;
+    public User findById(@PathVariable long id) {
+        return userService.findById(id);
     }
 
     @GetMapping
     public Collection<User> getAll() {
         log.info("Get all users");
-        return users.values();
+        return userService.findAll();
     }
 
-    private long getUserId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+    @DeleteMapping("/{id}")
+    public ResponseEntity<User> deleteById(@PathVariable int id) {
+        userService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
