@@ -9,6 +9,7 @@ import lombok.Setter;
 import ru.yandex.practicum.filmorate.validation.AfterInclude;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 
 /**
@@ -31,4 +32,6 @@ public class Film {
 
     @Positive
     private Integer duration;
+
+    Set<Long> likes;
 }
