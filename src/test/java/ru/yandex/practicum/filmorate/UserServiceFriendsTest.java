@@ -25,16 +25,13 @@ class UserServiceFriendsTest {
 
     @BeforeEach
     void setUp() {
-        // in-memory сторадж + сервис без Spring-контекста
         userStorage = new InMemoryUserStorage();
         userService = new UserService(userStorage);
 
-        // создаём 3 пользователей
         u1Id = createUser("alice@example.com", "alice", "Alice", LocalDate.of(1990,1,1)).getId();
         u2Id = createUser("bob@example.com", "bob", "Bob", LocalDate.of(1991,2,2)).getId();
         u3Id = createUser("carol@example.com", "carol", "Carol", LocalDate.of(1992,3,3)).getId();
 
-        // sanity-check
         assertThat(Set.of(u1Id, u2Id, u3Id)).doesNotContainNull();
         assertThat(u1Id).isNotEqualTo(u2Id).isNotEqualTo(u3Id);
     }
@@ -50,16 +47,14 @@ class UserServiceFriendsTest {
 
     @Test
     void addFriends_shouldAddSymmetrically_andBeIdempotent() {
-        // act: добавляем u2 к u1
+
         User u1After = userService.addFriends(u1Id, u2Id);
 
-        // assert: симметрично
         User u1 = userService.findById(u1Id);
         User u2 = userService.findById(u2Id);
         assertThat(u1.getFriends()).contains(u2Id);
         assertThat(u2.getFriends()).contains(u1Id);
 
-        // повторная операция — идемпотентна (ничего не ломает)
         User u1Again = userService.addFriends(u1Id, u2Id);
         assertThat(u1Again.getFriends()).contains(u2Id);
         assertThat(userService.findById(u2Id).getFriends()).contains(u1Id);
@@ -69,14 +64,11 @@ class UserServiceFriendsTest {
     void removeFriends_shouldRemoveSymmetrically_andBeIdempotent() {
         userService.addFriends(u1Id, u2Id);
 
-        // act: удаляем дружбу
         userService.removeFriends(u1Id, u2Id);
 
-        // assert: симметрично убрано
         assertThat(userService.findById(u1Id).getFriends()).doesNotContain(u2Id);
         assertThat(userService.findById(u2Id).getFriends()).doesNotContain(u1Id);
 
-        // повторное удаление — идемпотентно
         userService.removeFriends(u1Id, u2Id);
         assertThat(userService.findById(u1Id).getFriends()).doesNotContain(u2Id);
     }
