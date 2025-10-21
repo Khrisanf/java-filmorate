@@ -47,6 +47,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     public User findById(@PathVariable long id) {
+        log.debug("Find user by id: id={}", id);
         return userService.findById(id);
     }
 
@@ -59,26 +60,31 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<User> deleteById(@PathVariable int id) {
         userService.deleteById(id);
+        log.debug("Delete user by id: id={}", id);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}/friends/{friendId}")
     public User addFriend(@PathVariable long id, @PathVariable long friendId) {
+        log.debug("Add friend to user by id: id={}, friendId={}", id, friendId);
         return userService.addFriends(id, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
     public User removeFriend(@PathVariable long id, @PathVariable long friendId) {
+        log.debug("Remove friend from user by id: id={}, friendId={}", id, friendId);
         return userService.removeFriends(id, friendId);
     }
 
     @GetMapping("/{id}/friends")
     public Collection<User> getFriends(@PathVariable long id) {
+        log.debug("Get friends by id: id={}", id);
         return userService.findFriends(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
     public Collection<User> getCommonFriends(@PathVariable long id, @PathVariable long otherId) {
+        log.debug("Get friends by id: id={}, otherId={}", id, otherId);
         return userService.findMutualFriends(id, otherId);
     }
 }
