@@ -9,6 +9,7 @@ import lombok.Setter;
 import ru.yandex.practicum.filmorate.validation.AfterInclude;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 
 
@@ -18,7 +19,6 @@ import java.util.Set;
 @Getter
 @Setter
 public class Film {
-    Set<Long> likes;
     private Long id;
     @NotBlank
     private String name;
@@ -29,4 +29,5 @@ public class Film {
     private LocalDate releaseDate;
     @Positive
     private Integer duration;
+    private Set<Long> likes = new HashSet<>();
 }
