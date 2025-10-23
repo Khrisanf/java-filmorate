@@ -15,4 +15,10 @@ public interface FilmStorage {
     Collection<Film> findAll();
 
     void deleteById(long id);
+
+    Film addLike(long filmId, long userId);
+
+    Film removeLike(long filmId, long userId);
+
+    Collection<Film> findPopular(int count);
 }
