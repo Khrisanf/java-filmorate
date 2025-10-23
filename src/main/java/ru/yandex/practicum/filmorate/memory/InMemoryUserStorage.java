@@ -1,19 +1,18 @@
 package ru.yandex.practicum.filmorate.memory;
 
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @Component
 public class InMemoryUserStorage implements UserStorage {
     private final Map<Long, User> users = new ConcurrentHashMap<>();
-
     private final AtomicLong nextId = new AtomicLong(0);
 
     @Override
@@ -25,6 +24,9 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User update(User newUser) {
+        if (!users.containsKey(newUser.getId())) {
+            throw new NotFoundException("User " + newUser.getId() + " not found");
+        }
         users.put(newUser.getId(), newUser);
         return newUser;
     }
@@ -41,6 +43,71 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public void deleteById(long id) {
-        users.remove(id);
+        if (users.remove(id) == null) {
+            throw new NotFoundException("User " + id + " not found");
+        }
+    }
+
+    @Override
+    public User addFriend(long userId, long friendId) {
+        User user = getOrThrow(userId);
+        User friend = getOrThrow(friendId);
+
+        boolean isUser = user.getFriends().add(friendId);
+        boolean isFriend = friend.getFriends().add(userId);
+
+        if (isUser && isFriend) {
+            users.put(userId, user);
+            users.put(friendId, friend);
+        }
+        return user;
+    }
+
+    @Override
+    public User removeFriend(long userId, long friendId) {
+        User user = getOrThrow(userId);
+        User friend = getOrThrow(friendId);
+
+        boolean isUser = user.getFriends().remove(friendId);
+        boolean isFriend = friend.getFriends().remove(userId);
+
+        if (isUser && isFriend) {
+            this.update(user);
+            this.update(friend);
+        }
+        return user;
+    }
+
+    @Override
+    public Collection<User> findFriends(long userId) {
+        User user = getOrThrow(userId);
+        return user.getFriends().stream()
+                .map(this::getOrThrow)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<User> findMutualFriends(long userId, long otherUserId) {
+        User user = getOrThrow(userId);
+        User otherUser = getOrThrow(otherUserId);
+        Set<Long> users = user.getFriends();
+        Set<Long> otherUsers = otherUser.getFriends();
+
+        List<User> result = new ArrayList<>();
+        for (Long fid : users) {
+            if (otherUsers.contains(fid)) {
+                User friend = this.users.get(fid);
+                if (friend != null) result.add(friend);
+            }
+        }
+        return result;
+    }
+
+    private User getOrThrow(long id) {
+        User user = users.get(id);
+        if (user == null) {
+            throw new NotFoundException("User " + id + " not found");
+        }
+        return user;
     }
 }
