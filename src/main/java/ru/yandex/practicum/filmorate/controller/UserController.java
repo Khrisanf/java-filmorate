@@ -1,76 +1,72 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 
+import java.net.URI;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
-    private final Map<Long, User> users = new HashMap<>();
 
+    private final UserService userService;
 
     @PostMapping
     public ResponseEntity<User> create(@RequestBody @Valid User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-            log.debug("User name is blank, fallback to login='{}'", user.getLogin());
-        }
-        long id = getUserId();
-        user.setId(id);
-        users.put(id, user);
-        log.info("User created: id={}, login='{}'", id, user.getLogin());
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        User created = userService.create(user);
+        return ResponseEntity
+                .created(URI.create("/users/" + created.getId()))
+                .body(created);
     }
 
     @PutMapping
-    public User update(@RequestBody @Valid User user) {
-        User existing = users.get(user.getId());
-        if (existing == null) {
-            log.warn("Update failed: user {} not found", user.getId());
-            throw new NotFoundException("User " + user.getId() + " not found");
-        }
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-            log.debug("User name is blank on update, fallback to login='{}'", user.getLogin());
-        }
-        user.setId(user.getId());
-        users.put(user.getId(), user);
-        log.info("User updated: id={}, login='{}'", user.getId(), user.getLogin());
-        return user;
+    public ResponseEntity<User> update(@RequestBody @Valid User user) {
+        User updated = userService.update(user);
+        return ResponseEntity.ok(updated);
     }
 
     @GetMapping("/{id}")
-    public User findById(@PathVariable int id) {
-        User user = users.get(id);
-        if (user == null) {
-            log.warn("Get one failed: user {} not found", id);
-            throw new NotFoundException("User " + id + " not found");
-        }
-        return user;
+    public ResponseEntity<User> findById(@PathVariable long id) {
+        return ResponseEntity.ok(userService.findById(id));
     }
 
     @GetMapping
-    public Collection<User> getAll() {
-        log.info("Get all users");
-        return users.values();
+    public ResponseEntity<Collection<User>> getAll() {
+        Collection<User> users = userService.findAll();
+        return ResponseEntity.ok(users);
     }
 
-    private long getUserId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteById(@PathVariable long id) {
+        userService.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/friends/{friendId}")
+    public ResponseEntity<User> addFriend(@PathVariable long id, @PathVariable long friendId) {
+        return ResponseEntity.ok(userService.addFriends(id, friendId));
+    }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public ResponseEntity<User> removeFriend(@PathVariable long id, @PathVariable long friendId) {
+        return ResponseEntity.ok(userService.removeFriends(id, friendId));
+    }
+
+    @GetMapping("/{id}/friends")
+    public ResponseEntity<Collection<User>> getFriends(@PathVariable long id) {
+        return ResponseEntity.ok(userService.findFriends(id));
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public ResponseEntity<Collection<User>> getCommonFriends(@PathVariable long id, @PathVariable long otherId) {
+        return ResponseEntity.ok(userService.findMutualFriends(id, otherId));
     }
 }

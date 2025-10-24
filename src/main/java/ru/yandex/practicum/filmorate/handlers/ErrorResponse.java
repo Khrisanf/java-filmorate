@@ -5,4 +5,5 @@ public record ErrorResponse(
         int status,
         String detail,
         String path
-) {}
+) {
+}
