@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import ru.yandex.practicum.filmorate.validation.AfterInclude;
@@ -16,8 +18,8 @@ import java.util.Set;
 /**
  * Film.
  */
-@Getter
-@Setter
+@Data
+@Builder
 public class Film {
     private Long id;
     @NotBlank
