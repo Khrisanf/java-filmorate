@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,12 +21,13 @@ class UserValidationTest {
     }
 
     private User validUser() {
-        User u = new User();
-        u.setEmail("user@example.com");
-        u.setLogin("neo123");
-        u.setName("");
-        u.setBirthday(LocalDate.now().minusYears(18));
-        return u;
+        return User.builder()
+                .email("user@example.com")
+                .login("neo123")
+                .name("")
+                .birthday(LocalDate.now().minusYears(18))
+                .friends(new HashSet<>())
+                .build();
     }
 
     @Test

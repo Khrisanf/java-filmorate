@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
@@ -37,11 +38,13 @@ class UserServiceFriendsTest {
     }
 
     private User createUser(String email, String login, String name, LocalDate birthday) {
-        User u = new User();
-        u.setEmail(email);
-        u.setLogin(login);
-        u.setName(name);
-        u.setBirthday(birthday);
+        User u = User.builder()
+                .email(email)
+                .login(login)
+                .name(name)
+                .birthday(birthday)
+                .friends(new HashSet<>())
+                .build();
         return userStorage.create(u);
     }
 

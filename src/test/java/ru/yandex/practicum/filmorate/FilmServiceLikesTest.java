@@ -49,13 +49,14 @@ class FilmServiceLikesTest {
         assertNotEquals(f1, f2);
     }
 
+
     private User createUser(String email, String login, String name) {
-        User u = new User();
-        u.setEmail(email);
-        u.setLogin(login);
-        u.setName(name);
-        u.setBirthday(LocalDate.of(1990, 1, 1));
-        return userStorage.create(u);
+        return User.builder()
+                .email(email)
+                .login(login)
+                .name(name)
+                .birthday(LocalDate.of(1990, 1, 1))
+                .build();
     }
 
     private Film createFilm(String name, String desc, LocalDate date, int duration) {
