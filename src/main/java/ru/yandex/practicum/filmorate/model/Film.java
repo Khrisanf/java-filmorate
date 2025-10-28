@@ -31,5 +31,6 @@ public class Film {
     private LocalDate releaseDate;
     @Positive
     private Integer duration;
+    @Builder.Default
     private Set<Long> likes = new HashSet<>();
 }
