@@ -1,11 +1,10 @@
-package ru.yandex.practicum.filmorate;
+package ru.yandex.practicum.filmorate.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.memory.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
@@ -13,7 +12,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserServiceFriendsTest {
 
@@ -29,9 +29,9 @@ class UserServiceFriendsTest {
         userStorage = new InMemoryUserStorage();
         userService = new UserService(userStorage);
 
-        u1Id = createUser("alice@example.com", "alice", "Alice", LocalDate.of(1990,1,1)).getId();
-        u2Id = createUser("bob@example.com", "bob", "Bob", LocalDate.of(1991,2,2)).getId();
-        u3Id = createUser("carol@example.com", "carol", "Carol", LocalDate.of(1992,3,3)).getId();
+        u1Id = createUser("alice@example.com", "alice", "Alice", LocalDate.of(1990, 1, 1)).getId();
+        u2Id = createUser("bob@example.com", "bob", "Bob", LocalDate.of(1991, 2, 2)).getId();
+        u3Id = createUser("carol@example.com", "carol", "Carol", LocalDate.of(1992, 3, 3)).getId();
 
         assertThat(Set.of(u1Id, u2Id, u3Id)).doesNotContainNull();
         assertThat(u1Id).isNotEqualTo(u2Id).isNotEqualTo(u3Id);

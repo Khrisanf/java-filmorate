@@ -1,8 +1,8 @@
-package ru.yandex.practicum.filmorate;
+package ru.yandex.practicum.filmorate.validation;
 
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import jakarta.validation.ConstraintViolation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -22,12 +22,12 @@ class FilmValidationTest {
     }
 
     private Film validFilm() {
-        Film f = new Film();
-        f.setName("Matrix");
-        f.setDescription("A".repeat(200));
-        f.setReleaseDate(LocalDate.of(1895, 12, 28));
-        f.setDuration(1);
-        return f;
+        return Film.builder()
+                .name("Test Film")
+                .description("Description of test film")
+                .releaseDate(LocalDate.of(2020, 1, 1))
+                .duration(120)
+                .build();
     }
 
     @Test
