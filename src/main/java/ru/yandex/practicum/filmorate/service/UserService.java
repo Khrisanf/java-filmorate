@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.service;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,8 @@ import java.util.Collection;
 public class UserService {
 
     private final UserStorage userStorage;
+    @PostConstruct
+    void which() { log.info("UserStorage bean = {}", userStorage.getClass().getName()); }
 
     public User create(User user) {
         if (user.getName() == null || user.getName().isBlank()) {

@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.storage.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -15,11 +16,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
+@Profile("db")
 public class UserDbStorage implements UserStorage {
     @Qualifier("UserDbStorage")
     private final JdbcTemplate jdbcTemplate;
@@ -76,7 +76,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public Collection<User> findAll() {
-        String sql = "SELECT * FROM USERS";
+        String sql = "SELECT * FROM users ORDER BY id";
         return jdbcTemplate.query(sql, this::mapRowToUser);
     }
 
@@ -91,32 +91,85 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
+    @Transactional
     public User addFriend(long userId, long friendId) {
-        throw new UnsupportedOperationException("Method not implemented yet");
+        if (userId == friendId) {
+            throw new IllegalArgumentException("Cannot add yourself as a friend");
+        }
+        assertUserExists(userId);
+        assertUserExists(friendId);
+
+        final String sql = "MERGE INTO friendships (user_id, friend_id) KEY(user_id, friend_id) VALUES (?, ?)";
+        jdbcTemplate.update(sql, userId, friendId);
+        jdbcTemplate.update(sql, friendId, userId);
+
+        return findById(userId).orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
     }
 
     @Override
+    @Transactional
     public User removeFriend(long userId, long friendId) {
-        throw new UnsupportedOperationException("Method not implemented yet");
+        assertUserExists(userId);
+        assertUserExists(friendId);
+
+        jdbcTemplate.update("DELETE FROM friendships WHERE user_id = ? AND friend_id = ?", userId, friendId);
+        jdbcTemplate.update("DELETE FROM friendships WHERE user_id = ? AND friend_id = ?", friendId, userId);
+
+        // Не важно, было ли что удалять — отвечаем успехом
+        return findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
     }
+
 
     @Override
     public Collection<User> findFriends(long userId) {
-        throw new UnsupportedOperationException("Method not implemented yet");
+        assertUserExists(userId);
+        final String sql = """
+        SELECT u.*
+        FROM friendships f
+        JOIN users u ON u.id = f.friend_id
+        WHERE f.user_id = ?
+        ORDER BY u.id
+        """;
+        return jdbcTemplate.query(sql, this::mapRowToUser, userId);
     }
 
     @Override
     public Collection<User> findMutualFriends(long userId, long otherUserId) {
-        throw new UnsupportedOperationException("Method not implemented yet");
+        assertUserExists(userId);
+        assertUserExists(otherUserId);
+        final String sql = """
+        SELECT DISTINCT u.*
+        FROM friendships f1
+        JOIN friendships f2 ON f1.friend_id = f2.friend_id
+        JOIN users u ON u.id = f1.friend_id
+        WHERE f1.user_id = ? AND f2.user_id = ?
+        ORDER BY u.id
+        """;
+        return jdbcTemplate.query(sql, this::mapRowToUser, userId, otherUserId);
     }
 
-    private User mapRowToUser(ResultSet resultSet, int rowNum) throws SQLException {
-        return User.builder()
-                .id(resultSet.getLong("id"))
-                .email(resultSet.getString("email"))
-                .login(resultSet.getString("login"))
-                .name(resultSet.getString("name"))
-                .birthday(resultSet.getObject("birthday", LocalDate.class))
+
+    private void assertUserExists(long id) {
+        if (findById(id).isEmpty()) {
+            throw new NotFoundException("User with id " + id + " not found");
+        }
+    }
+
+    private User mapRowToUser(ResultSet rs, int rowNum) throws SQLException {
+        User u = User.builder()
+                .id(rs.getLong("id"))
+                .email(rs.getString("email"))
+                .login(rs.getString("login"))
+                .name(rs.getString("name"))
+                .birthday(rs.getObject("birthday", LocalDate.class))
                 .build();
+        u.setFriends(loadFriendIds(u.getId()));
+        return u;
+    }
+
+    private Set<Long> loadFriendIds(long userId) {
+        final String sql = "SELECT friend_id FROM friendships WHERE user_id = ?";
+        return new HashSet<>(jdbcTemplate.query(sql, (r, i) -> r.getLong(1), userId));
     }
 }
