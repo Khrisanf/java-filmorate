@@ -101,7 +101,6 @@ public class UserDbStorage implements UserStorage {
 
         final String sql = "MERGE INTO friendships (user_id, friend_id) KEY(user_id, friend_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, userId, friendId);
-        jdbcTemplate.update(sql, friendId, userId);
 
         return findById(userId).orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
     }
@@ -112,14 +111,14 @@ public class UserDbStorage implements UserStorage {
         assertUserExists(userId);
         assertUserExists(friendId);
 
-        jdbcTemplate.update("DELETE FROM friendships WHERE user_id = ? AND friend_id = ?", userId, friendId);
-        jdbcTemplate.update("DELETE FROM friendships WHERE user_id = ? AND friend_id = ?", friendId, userId);
+        jdbcTemplate.update(
+                "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?",
+                userId, friendId
+        );
 
-        // Не важно, было ли что удалять — отвечаем успехом
         return findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
     }
-
 
     @Override
     public Collection<User> findFriends(long userId) {

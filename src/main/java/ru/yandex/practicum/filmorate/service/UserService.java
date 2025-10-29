@@ -61,10 +61,12 @@ public class UserService {
         if (userId == friendId) {
             throw new IllegalArgumentException("Cannot add yourself as a friend");
         }
+        log.info("===Adding friends to friends list: id={}", userId);
         return userStorage.addFriend(userId, friendId);
     }
 
     public User removeFriends(long userId, long friendId) {
+        log.info("===Removing friends from friends list: id={}", userId);
         return userStorage.removeFriend(userId, friendId);
     }
 

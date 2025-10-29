@@ -53,14 +53,11 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public User addFriend(long userId, long friendId) {
         User user = getOrThrow(userId);
-        User friend = getOrThrow(friendId);
 
-        boolean isUser = user.getFriends().add(friendId);
-        boolean isFriend = friend.getFriends().add(userId);
+        boolean added = user.getFriends().add(friendId);
 
-        if (isUser && isFriend) {
+        if (added) {
             users.put(userId, user);
-            users.put(friendId, friend);
         }
         return user;
     }
@@ -68,14 +65,11 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public User removeFriend(long userId, long friendId) {
         User user = getOrThrow(userId);
-        User friend = getOrThrow(friendId);
 
-        boolean isUser = user.getFriends().remove(friendId);
-        boolean isFriend = friend.getFriends().remove(userId);
+        boolean removed = user.getFriends().remove(friendId);
 
-        if (isUser && isFriend) {
+        if (removed) {
             this.update(user);
-            this.update(friend);
         }
         return user;
     }
