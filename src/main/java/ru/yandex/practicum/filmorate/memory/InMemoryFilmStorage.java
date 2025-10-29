@@ -1,12 +1,13 @@
 package ru.yandex.practicum.filmorate.memory;
 
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Component
-@Primary
+@Profile("memFilms")
 public class InMemoryFilmStorage implements FilmStorage {
 
     private final Map<Long, Film> films = new ConcurrentHashMap<>();
@@ -56,6 +57,9 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Film addLike(long filmId, long userId) {
         Film film = getOrThrow(filmId);
+        if (film.getLikes() == null) {
+            film.setLikes(new HashSet<>());
+        }
         boolean added = film.getLikes().add(userId);
         if (added) {
             films.put(filmId, film);

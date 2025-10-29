@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -14,10 +15,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
+@Profile("dbFilms")
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
 
@@ -89,18 +92,46 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film addLike(long filmId, long userId) {
-        throw new UnsupportedOperationException("Method not implemented yet");
+        assertFilmExists(filmId);
+        assertUserExists(userId);
+
+        final String sql = """
+        INSERT INTO likes (film_id, user_id)
+        SELECT ?, ?
+        WHERE NOT EXISTS (
+            SELECT 1 FROM likes WHERE film_id = ? AND user_id = ?
+        )
+        """;
+
+        jdbcTemplate.update(sql, filmId, userId, filmId, userId);
+
+        return findById(filmId).orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
     }
+
 
     @Override
     public Film removeLike(long filmId, long userId) {
-        throw new UnsupportedOperationException("Method not implemented yet");
+        assertFilmExists(filmId);
+        assertUserExists(userId);
+        final String sql = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
+        jdbcTemplate.update(sql, filmId, userId);
+        return findById(filmId).orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
     }
 
     @Override
     public Collection<Film> findPopular(int count) {
-        throw new UnsupportedOperationException("Method not implemented yet");
+        final String sql = """
+                SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                       COUNT(l.user_id) AS likes_cnt
+                FROM films f
+                LEFT JOIN likes l ON l.film_id = f.id
+                GROUP BY f.id, f.name, f.description, f.release_date, f.duration
+                ORDER BY likes_cnt DESC, f.id
+                LIMIT ?
+                """;
+        return jdbcTemplate.query(sql, this::mapRowToFilm, count);
     }
+
 
     private Film mapRowToFilm(ResultSet resultSet, int rowNum) throws SQLException {
         return Film.builder()
@@ -109,6 +140,22 @@ public class FilmDbStorage implements FilmStorage {
                 .description(resultSet.getString("description"))
                 .releaseDate(resultSet.getObject("release_date", java.time.LocalDate.class))
                 .duration(resultSet.getInt("duration"))
+                .likes(new HashSet<>())
                 .build();
+    }
+
+    private void assertUserExists(long userId) {
+        Boolean exists = jdbcTemplate.queryForObject(
+                "SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)", Boolean.class, userId
+        );
+        if (exists == null || !exists) {
+            throw new NotFoundException("User with id " + userId + " not found");
+        }
+    }
+
+    private void assertFilmExists(long filmId) {
+        if (findById(filmId).isEmpty()) {
+            throw new NotFoundException("Film with id " + filmId + " not found");
+        }
     }
 }
