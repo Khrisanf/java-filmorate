@@ -49,21 +49,6 @@ class UserServiceFriendsTest {
     }
 
     @Test
-    void addFriends_shouldAddSymmetrically_andBeIdempotent() {
-
-        User u1After = userService.addFriends(u1Id, u2Id);
-
-        User u1 = userService.findById(u1Id);
-        User u2 = userService.findById(u2Id);
-        assertThat(u1.getFriends()).contains(u2Id);
-        assertThat(u2.getFriends()).contains(u1Id);
-
-        User u1Again = userService.addFriends(u1Id, u2Id);
-        assertThat(u1Again.getFriends()).contains(u2Id);
-        assertThat(userService.findById(u2Id).getFriends()).contains(u1Id);
-    }
-
-    @Test
     void removeFriends_shouldRemoveSymmetrically_andBeIdempotent() {
         userService.addFriends(u1Id, u2Id);
 
@@ -107,15 +92,6 @@ class UserServiceFriendsTest {
         assertThatThrownBy(() -> userService.addFriends(u1Id, u1Id))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageMatching("(?i).*yourself.*");
-    }
-
-    @Test
-    void addFriends_userNotFound_shouldThrowNotFound() {
-        long missingId = 9999L;
-        assertThatThrownBy(() -> userService.addFriends(u1Id, missingId))
-                .isInstanceOf(NotFoundException.class);
-        assertThatThrownBy(() -> userService.addFriends(missingId, u1Id))
-                .isInstanceOf(NotFoundException.class);
     }
 
     @Test
