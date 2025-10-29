@@ -4,21 +4,23 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
 
 import java.time.LocalDate;
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @JdbcTest
-@AutoConfigureTestDatabase
-@Import({FilmDbStorage.class})
-@Sql({"/schema.sql"})
+@AutoConfigureTestDatabase(replace = Replace.ANY)
+@Import(FilmDbStorage.class)
+@Sql(scripts = "/schema.sql", executionPhase = ExecutionPhase.BEFORE_TEST_METHOD)
 class FilmDbStorageTest implements FilmorateTestSupport {
 
     @Autowired
@@ -31,41 +33,63 @@ class FilmDbStorageTest implements FilmorateTestSupport {
         testFilm = filmStorage.create(
                 film("Test Film", "Description of test film", LocalDate.of(2020, 1, 1), 120)
         );
+        assertThat(testFilm.getId()).isPositive();
     }
 
     @Test
-    void shouldCreateFilmWithValidData_returnFilmWithId() {
+    void create_shouldPersistAndReturnId() {
         Film created = filmStorage.create(
-                film("New Film", "New description", LocalDate.now(), 90)
+                film("New Film", "New description", LocalDate.of(2021, 5, 20), 90)
         );
+
         assertThat(created).isNotNull();
         assertThat(created.getId()).isPositive();
-        assertThat(created.getName()).isEqualTo("New Film");
-        assertThat(created.getDuration()).isEqualTo(90);
+
+        Optional<Film> reloaded = filmStorage.findById(created.getId());
+        assertThat(reloaded).isPresent();
+        assertThat(reloaded.get().getName()).isEqualTo("New Film");
+        assertThat(reloaded.get().getDuration()).isEqualTo(90);
     }
 
     @Test
-    void shouldFindFilmById_whenFilmExists_returnFilmOptional() {
+    void findById_whenExists_returnsFilm() {
         Optional<Film> found = filmStorage.findById(testFilm.getId());
         assertThat(found).isPresent()
-                .hasValueSatisfying(f ->
-                        assertThat(f).hasFieldOrPropertyWithValue("id", testFilm.getId()));
+                .get()
+                .satisfies(f -> {
+                    assertThat(f.getId()).isEqualTo(testFilm.getId());
+                    assertThat(f.getName()).isEqualTo("Test Film");
+                });
     }
 
     @Test
-    void shouldUpdateFilm_whenValidDataProvided_updateFilmInStorage() {
+    void findById_whenNotExists_returnsEmpty() {
+        assertThat(filmStorage.findById(999_999L)).isEmpty();
+    }
+
+    @Test
+    void update_whenValid_updatesRow() {
         testFilm.setName("Updated Film Name");
         testFilm.setDescription("Updated description");
+
         Film updated = filmStorage.update(testFilm);
 
         assertThat(updated.getName()).isEqualTo("Updated Film Name");
         assertThat(updated.getDescription()).isEqualTo("Updated description");
+
+        // перепрочитаем из БД
+        Film reloaded = filmStorage.findById(testFilm.getId()).orElseThrow();
+        assertThat(reloaded.getName()).isEqualTo("Updated Film Name");
+        assertThat(reloaded.getDescription()).isEqualTo("Updated description");
+        assertThat(reloaded.getDuration()).isEqualTo(120);
     }
 
     @Test
-    void shouldDeleteFilm_whenFilmExists_removeFilmFromStorage() {
+    void deleteById_whenExists_removesRow() {
         assertThat(filmStorage.findById(testFilm.getId())).isPresent();
+
         filmStorage.deleteById(testFilm.getId());
+
         assertThat(filmStorage.findById(testFilm.getId())).isEmpty();
     }
 }
