@@ -124,12 +124,12 @@ public class UserDbStorage implements UserStorage {
     public Collection<User> findFriends(long userId) {
         assertUserExists(userId);
         final String sql = """
-        SELECT u.*
-        FROM friendships f
-        JOIN users u ON u.id = f.friend_id
-        WHERE f.user_id = ?
-        ORDER BY u.id
-        """;
+                SELECT u.*
+                FROM friendships f
+                JOIN users u ON u.id = f.friend_id
+                WHERE f.user_id = ?
+                ORDER BY u.id
+                """;
         return jdbcTemplate.query(sql, this::mapRowToUser, userId);
     }
 
@@ -138,13 +138,13 @@ public class UserDbStorage implements UserStorage {
         assertUserExists(userId);
         assertUserExists(otherUserId);
         final String sql = """
-        SELECT DISTINCT u.*
-        FROM friendships f1
-        JOIN friendships f2 ON f1.friend_id = f2.friend_id
-        JOIN users u ON u.id = f1.friend_id
-        WHERE f1.user_id = ? AND f2.user_id = ?
-        ORDER BY u.id
-        """;
+                SELECT DISTINCT u.*
+                FROM friendships f1
+                JOIN friendships f2 ON f1.friend_id = f2.friend_id
+                JOIN users u ON u.id = f1.friend_id
+                WHERE f1.user_id = ? AND f2.user_id = ?
+                ORDER BY u.id
+                """;
         return jdbcTemplate.query(sql, this::mapRowToUser, userId, otherUserId);
     }
 

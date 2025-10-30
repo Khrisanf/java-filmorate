@@ -182,12 +182,12 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         List<Genre> genres = jdbcTemplate.query("""
-                SELECT g.id, g.name
-                FROM film_genres fg
-                JOIN genres g ON g.id = fg.genre_id
-                WHERE fg.film_id = ?
-                ORDER BY g.id
-                """, (rs, rn) -> Genre.builder()
+                        SELECT g.id, g.name
+                        FROM film_genres fg
+                        JOIN genres g ON g.id = fg.genre_id
+                        WHERE fg.film_id = ?
+                        ORDER BY g.id
+                        """, (rs, rn) -> Genre.builder()
                         .id(rs.getInt("id"))
                         .name(rs.getString("name"))
                         .build(),

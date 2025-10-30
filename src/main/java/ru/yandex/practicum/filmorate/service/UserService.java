@@ -16,8 +16,11 @@ import java.util.Collection;
 public class UserService {
 
     private final UserStorage userStorage;
+
     @PostConstruct
-    void which() { log.info("UserStorage bean = {}", userStorage.getClass().getName()); }
+    void which() {
+        log.info("UserStorage bean = {}", userStorage.getClass().getName());
+    }
 
     public User create(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
