@@ -3,13 +3,10 @@ package ru.yandex.practicum.filmorate.memory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -24,9 +21,12 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Film create(Film film) {
         film.setId(nextId.incrementAndGet());
+        if (film.getLikes() == null) film.setLikes(new HashSet<>());
+        if (film.getGenres() == null) film.setGenres(new LinkedHashSet<>());
         films.put(film.getId(), film);
         return film;
     }
+
 
     @Override
     public Film update(Film newFilm) {
@@ -80,10 +80,16 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Collection<Film> findPopular(int count) {
         return films.values().stream()
-                .sorted((a, b) -> Integer.compare(b.getLikes().size(), a.getLikes().size()))
+                .sorted(
+                        Comparator
+                                .comparingInt((Film f) -> f.getLikes() == null ? 0 : f.getLikes().size())
+                                .reversed()
+                                .thenComparingLong(Film::getId)
+                )
                 .limit(count)
                 .collect(Collectors.toList());
     }
+
 
     private Film getOrThrow(long id) {
         Film film = films.get(id);
