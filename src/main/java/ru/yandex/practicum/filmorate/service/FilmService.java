@@ -10,7 +10,6 @@ import ru.yandex.practicum.filmorate.model.film.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,9 +24,8 @@ public class FilmService {
 
     @Transactional
     public Film create(Film film) {
-        validateSimpleFields(film);
-        validateDicts(film);
-        Film created = filmStorage.create(normalizeGenres(film));
+        validateMpaAndGenre(film);
+        Film created = filmStorage.create(fillGenres(film));
         log.info("Film created: id={}, name='{}'", created.getId(), created.getName());
         return created;
     }
@@ -35,9 +33,8 @@ public class FilmService {
     @Transactional
     public Film update(Film film) {
         ensureFilmExists(film.getId());
-        validateSimpleFields(film);
-        validateDicts(film);
-        Film updated = filmStorage.update(normalizeGenres(film));
+        validateMpaAndGenre(film);
+        Film updated = filmStorage.update(fillGenres(film));
         log.info("Film updated: id={}", updated.getId());
         return updated;
     }
@@ -94,22 +91,7 @@ public class FilmService {
                 .orElseThrow(() -> new NotFoundException("User not found: id=" + id));
     }
 
-    private void validateSimpleFields(Film f) {
-        if (f.getName() == null || f.getName().isBlank()) {
-            throw new IllegalArgumentException("Film name must not be blank");
-        }
-        if (f.getDescription() != null && f.getDescription().length() > 200) {
-            throw new IllegalArgumentException("Description length must be ≤ 200");
-        }
-        if (f.getReleaseDate() != null && f.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            throw new IllegalArgumentException("Release date must be on/after 1895-12-28");
-        }
-        if (f.getDuration() <= 0) {
-            throw new IllegalArgumentException("Duration must be > 0");
-        }
-    }
-
-    private void validateDicts(Film f) {
+    private void validateMpaAndGenre(Film f) {
         if (f.getMpa() != null && f.getMpa().getId() != null) {
             if (!mpaService.existsById(f.getMpa().getId()))
                 throw new NotFoundException("MPA not found: id=" + f.getMpa().getId());
@@ -126,15 +108,15 @@ public class FilmService {
             throw new NotFoundException("Genres not found: " + missing);
     }
 
-    private Film normalizeGenres(Film f) {
+    private Film fillGenres(Film f) {
         if (f.getGenres() == null || f.getGenres().isEmpty()) return f;
-        var normalized = f.getGenres().stream()
+        var filled = f.getGenres().stream()
                 .filter(Objects::nonNull)
                 .filter(g -> g.getId() != null)
                 .collect(Collectors.toCollection(
                         () -> new TreeSet<>(Comparator.comparingInt(Genre::getId))
                 ));
-        f.setGenres(normalized);
+        f.setGenres(filled);
         return f;
     }
 }
