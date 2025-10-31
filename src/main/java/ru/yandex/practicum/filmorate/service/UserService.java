@@ -69,20 +69,26 @@ public class UserService {
             throw new IllegalArgumentException("Cannot add yourself as a friend");
         }
         log.info("===Adding friends to friends list: id={}", userId);
+        ensureUserExists(userId);
+        ensureUserExists(friendId);
         return userStorage.addFriend(userId, friendId);
     }
 
     @Transactional
     public User removeFriends(long userId, long friendId) {
         log.info("===Removing friends from friends list: id={}", userId);
+        ensureUserExists(userId);
+        ensureUserExists(friendId);
         return userStorage.removeFriend(userId, friendId);
     }
 
     public Collection<User> findFriends(long userId) {
+        ensureUserExists(userId);
         return userStorage.findFriends(userId);
     }
 
     public Collection<User> findMutualFriends(long userId, long anotherUserId) {
+        ensureUserExists(userId);
         return userStorage.findMutualFriends(userId, anotherUserId);
     }
 
