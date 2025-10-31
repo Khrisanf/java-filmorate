@@ -51,7 +51,7 @@ class UserDbStorageFriendshipTest {
     @Test
     void addFriend_createsLink_andIsIdempotent() {
         userStorage.addFriend(u1.getId(), u2.getId());
-        userStorage.addFriend(u1.getId(), u2.getId()); // повтор — не должен дублировать
+        userStorage.addFriend(u1.getId(), u2.getId());
 
         Collection<User> friends = userStorage.findFriends(u1.getId());
         assertThat(friends)
@@ -59,20 +59,6 @@ class UserDbStorageFriendshipTest {
                 .first()
                 .extracting(User::getId)
                 .isEqualTo(u2.getId());
-    }
-
-    @Test
-    void addFriend_self_shouldThrow() {
-        assertThatThrownBy(() -> userStorage.addFriend(u1.getId(), u1.getId()))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void addFriend_whenFriendNotExists_shouldThrowNotFound() {
-        long ghostId = 999_999L;
-        assertThatThrownBy(() -> userStorage.addFriend(u1.getId(), ghostId))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("User with id " + ghostId + " not found");
     }
 
     @Test

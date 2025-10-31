@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -22,6 +23,7 @@ public class UserService {
         log.info("UserStorage bean = {}", userStorage.getClass().getName());
     }
 
+    @Transactional
     public User create(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
@@ -32,6 +34,7 @@ public class UserService {
         return created;
     }
 
+    @Transactional
     public User update(User user) {
         ensureUserExists(user.getId());
         if (user.getName() == null || user.getName().isBlank()) {
@@ -60,6 +63,7 @@ public class UserService {
         log.info("User deleted: id={}", id);
     }
 
+    @Transactional
     public User addFriends(long userId, long friendId) {
         if (userId == friendId) {
             throw new IllegalArgumentException("Cannot add yourself as a friend");
@@ -68,6 +72,7 @@ public class UserService {
         return userStorage.addFriend(userId, friendId);
     }
 
+    @Transactional
     public User removeFriends(long userId, long friendId) {
         log.info("===Removing friends from friends list: id={}", userId);
         return userStorage.removeFriend(userId, friendId);

@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -30,7 +29,6 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    @Transactional
     public User create(User user) {
         String sql = "INSERT INTO USERS (email, login, name, birthday) VALUES (?, ?, ?, ?)";
 
@@ -51,15 +49,12 @@ public class UserDbStorage implements UserStorage {
     public User update(User user) {
         String sql = "UPDATE USERS SET email = ?, login = ?, name = ?, birthday = ? WHERE id = ?";
 
-        int rows = jdbcTemplate.update(sql,
+        jdbcTemplate.update(sql,
                 user.getEmail(),
                 user.getLogin(),
                 user.getName(),
                 user.getBirthday(),
                 user.getId());
-        if (rows == 0) {
-            throw new NotFoundException("User with id " + user.getId() + " not found");
-        }
         return user;
     }
 
@@ -83,22 +78,11 @@ public class UserDbStorage implements UserStorage {
     @Override
     public void deleteById(long id) {
         String sql = "DELETE FROM USERS WHERE id = ?";
-        int rows = jdbcTemplate.update(sql, id);
-
-        if (rows == 0) {
-            throw new NotFoundException("User with id " + id + " not found");
-        }
+        jdbcTemplate.update(sql, id);
     }
 
     @Override
-    @Transactional
     public User addFriend(long userId, long friendId) {
-        if (userId == friendId) {
-            throw new IllegalArgumentException("Cannot add yourself as a friend");
-        }
-        assertUserExists(userId);
-        assertUserExists(friendId);
-
         final String sql = "MERGE INTO friendships (user_id, friend_id) KEY(user_id, friend_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, userId, friendId);
 
@@ -106,11 +90,7 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    @Transactional
     public User removeFriend(long userId, long friendId) {
-        assertUserExists(userId);
-        assertUserExists(friendId);
-
         jdbcTemplate.update(
                 "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?",
                 userId, friendId
@@ -122,7 +102,6 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public Collection<User> findFriends(long userId) {
-        assertUserExists(userId);
         final String sql = """
                 SELECT u.*
                 FROM friendships f
@@ -135,8 +114,6 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public Collection<User> findMutualFriends(long userId, long otherUserId) {
-        assertUserExists(userId);
-        assertUserExists(otherUserId);
         final String sql = """
                 SELECT DISTINCT u.*
                 FROM friendships f1
@@ -146,13 +123,6 @@ public class UserDbStorage implements UserStorage {
                 ORDER BY u.id
                 """;
         return jdbcTemplate.query(sql, this::mapRowToUser, userId, otherUserId);
-    }
-
-
-    private void assertUserExists(long id) {
-        if (findById(id).isEmpty()) {
-            throw new NotFoundException("User with id " + id + " not found");
-        }
     }
 
     private User mapRowToUser(ResultSet rs, int rowNum) throws SQLException {
