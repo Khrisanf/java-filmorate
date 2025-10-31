@@ -35,6 +35,15 @@ public class MpaDbStorage implements MpaStorage {
                 .findFirst();
     }
 
+    @Override
+    public boolean existsById(int id) {
+        Boolean x = jdbcTemplate.queryForObject(
+                "SELECT EXISTS(SELECT 1 FROM mpa_ratings WHERE id = ?)",
+                Boolean.class, id);
+        return x;
+    }
+
+
     private MpaRating map(ResultSet rs, int rowNum) throws SQLException {
         return MpaRating.builder()
                 .id(rs.getInt("id"))

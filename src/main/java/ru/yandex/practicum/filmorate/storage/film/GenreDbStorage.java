@@ -8,8 +8,11 @@ import ru.yandex.practicum.filmorate.model.film.Genre;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Repository
 @Profile("dbFilms")
@@ -33,6 +36,19 @@ public class GenreDbStorage implements GenreStorage {
         List<Genre> list = jdbcTemplate.query(sql, this::map, id);
         return list.stream().findFirst();
     }
+
+    @Override
+    public Set<Integer> findMissingIds(Set<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return Set.of();
+        String placeholders = ids.stream().map(id -> "?").collect(Collectors.joining(","));
+        List<Integer> present = jdbcTemplate.queryForList(
+                "SELECT id FROM genres WHERE id IN (" + placeholders + ")",
+                Integer.class, ids.toArray());
+        HashSet<Integer> missing = new HashSet<>(ids);
+        missing.removeAll(present);
+        return missing;
+    }
+
 
     private Genre map(ResultSet rs, int rowNum) throws SQLException {
         return Genre.builder()

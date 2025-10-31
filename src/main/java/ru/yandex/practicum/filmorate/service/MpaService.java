@@ -21,4 +21,8 @@ public class MpaService {
         return mpaStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("MPA with id " + id + " not found"));
     }
+
+    public boolean existsById(int id) {
+        return mpaStorage.existsById(id);
+    }
 }
