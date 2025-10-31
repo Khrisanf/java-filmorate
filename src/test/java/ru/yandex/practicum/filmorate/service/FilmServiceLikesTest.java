@@ -23,14 +23,6 @@ class FilmServiceLikesTest {
     private FilmStorage filmStorage;
     private UserStorage userStorage;
     private FilmService filmService;
-
-    static class DummyGenreService extends GenreService {
-        public DummyGenreService() { super(null); }
-    }
-    static class DummyMpaService extends MpaService {
-        public DummyMpaService() { super(null); }
-    }
-
     private long userA;
     private long userB;
     private long f1;
@@ -136,5 +128,17 @@ class FilmServiceLikesTest {
     void getPopular_invalidCount_shouldThrowIllegalArgument() {
         assertThrows(IllegalArgumentException.class, () -> filmService.getPopular(0));
         assertThrows(IllegalArgumentException.class, () -> filmService.getPopular(-5));
+    }
+
+    static class DummyGenreService extends GenreService {
+        public DummyGenreService() {
+            super(null);
+        }
+    }
+
+    static class DummyMpaService extends MpaService {
+        public DummyMpaService() {
+            super(null);
+        }
     }
 }
