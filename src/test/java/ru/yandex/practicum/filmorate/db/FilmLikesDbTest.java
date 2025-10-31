@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -78,8 +79,8 @@ class FilmLikesDbTest implements FilmorateTestSupport {
     }
 
     @Test
-    void addLike_withUnknownUser_shouldThrowNotFound() {
+    void addLike_withUnknownUser_shouldFailWithFkViolation() {
         assertThatThrownBy(() -> filmStorage.addLike(a.getId(), 9999L))
-                .isInstanceOf(ru.yandex.practicum.filmorate.exceptions.NotFoundException.class);
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

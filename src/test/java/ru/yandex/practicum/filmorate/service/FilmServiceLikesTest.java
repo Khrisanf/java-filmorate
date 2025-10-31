@@ -24,6 +24,13 @@ class FilmServiceLikesTest {
     private UserStorage userStorage;
     private FilmService filmService;
 
+    static class DummyGenreService extends GenreService {
+        public DummyGenreService() { super(null); }
+    }
+    static class DummyMpaService extends MpaService {
+        public DummyMpaService() { super(null); }
+    }
+
     private long userA;
     private long userB;
     private long f1;
@@ -34,7 +41,13 @@ class FilmServiceLikesTest {
     void setUp() {
         filmStorage = new InMemoryFilmStorage();
         userStorage = new InMemoryUserStorage();
-        filmService = new FilmService(filmStorage, userStorage);
+
+        filmService = new FilmService(
+                filmStorage,
+                userStorage,
+                new DummyGenreService(),
+                new DummyMpaService()
+        );
 
         userA = createAndSaveUser("alice@example.com", "alice", "Alice").getId();
         userB = createAndSaveUser("bob@example.com", "bob", "Bob").getId();
