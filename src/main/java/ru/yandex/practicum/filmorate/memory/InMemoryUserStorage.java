@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.memory;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -11,6 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Component
+@Profile("mem")
 public class InMemoryUserStorage implements UserStorage {
     private final Map<Long, User> users = new ConcurrentHashMap<>();
     private final AtomicLong nextId = new AtomicLong(0);
@@ -51,14 +53,11 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public User addFriend(long userId, long friendId) {
         User user = getOrThrow(userId);
-        User friend = getOrThrow(friendId);
 
-        boolean isUser = user.getFriends().add(friendId);
-        boolean isFriend = friend.getFriends().add(userId);
+        boolean added = user.getFriends().add(friendId);
 
-        if (isUser && isFriend) {
+        if (added) {
             users.put(userId, user);
-            users.put(friendId, friend);
         }
         return user;
     }
@@ -66,14 +65,11 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public User removeFriend(long userId, long friendId) {
         User user = getOrThrow(userId);
-        User friend = getOrThrow(friendId);
 
-        boolean isUser = user.getFriends().remove(friendId);
-        boolean isFriend = friend.getFriends().remove(userId);
+        boolean removed = user.getFriends().remove(friendId);
 
-        if (isUser && isFriend) {
+        if (removed) {
             this.update(user);
-            this.update(friend);
         }
         return user;
     }

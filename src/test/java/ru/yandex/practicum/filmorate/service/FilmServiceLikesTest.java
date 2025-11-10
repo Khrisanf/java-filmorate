@@ -1,13 +1,12 @@
-package ru.yandex.practicum.filmorate;
+package ru.yandex.practicum.filmorate.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.memory.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.memory.InMemoryUserStorage;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -24,7 +23,6 @@ class FilmServiceLikesTest {
     private FilmStorage filmStorage;
     private UserStorage userStorage;
     private FilmService filmService;
-
     private long userA;
     private long userB;
     private long f1;
@@ -36,34 +34,41 @@ class FilmServiceLikesTest {
         filmStorage = new InMemoryFilmStorage();
         userStorage = new InMemoryUserStorage();
 
-        filmService = new FilmService(filmStorage, userStorage);
+        filmService = new FilmService(
+                filmStorage,
+                userStorage,
+                new DummyGenreService(),
+                new DummyMpaService()
+        );
 
-        userA = createUser("alice@example.com", "alice", "Alice").getId();
-        userB = createUser("bob@example.com", "bob", "Bob").getId();
+        userA = createAndSaveUser("alice@example.com", "alice", "Alice").getId();
+        userB = createAndSaveUser("bob@example.com", "bob", "Bob").getId();
 
-        f1 = createFilm("Film One", "Desc1", LocalDate.of(1995, 1, 1), 120).getId();
-        f2 = createFilm("Film Two", "Desc2", LocalDate.of(2000, 2, 2), 100).getId();
-        f3 = createFilm("Film Three", "Desc3", LocalDate.of(2010, 3, 3), 90).getId();
+        f1 = createAndSaveFilm("Film One", "Desc1", LocalDate.of(1995, 1, 1), 120).getId();
+        f2 = createAndSaveFilm("Film Two", "Desc2", LocalDate.of(2000, 2, 2), 100).getId();
+        f3 = createAndSaveFilm("Film Three", "Desc3", LocalDate.of(2010, 3, 3), 90).getId();
 
         assertNotEquals(userA, userB);
         assertNotEquals(f1, f2);
     }
 
-    private User createUser(String email, String login, String name) {
-        User u = new User();
-        u.setEmail(email);
-        u.setLogin(login);
-        u.setName(name);
-        u.setBirthday(LocalDate.of(1990, 1, 1));
+    private User createAndSaveUser(String email, String login, String name) {
+        User u = User.builder()
+                .email(email)
+                .login(login)
+                .name(name)
+                .birthday(LocalDate.of(1990, 1, 1))
+                .build();
         return userStorage.create(u);
     }
 
-    private Film createFilm(String name, String desc, LocalDate date, int duration) {
-        Film f = new Film();
-        f.setName(name);
-        f.setDescription(desc);
-        f.setReleaseDate(date);
-        f.setDuration(duration);
+    private Film createAndSaveFilm(String name, String description, LocalDate releaseDate, int duration) {
+        Film f = Film.builder()
+                .name(name)
+                .description(description)
+                .releaseDate(releaseDate)
+                .duration(duration)
+                .build();
         return filmStorage.create(f);
     }
 
@@ -75,7 +80,7 @@ class FilmServiceLikesTest {
 
         Film again = filmService.addLike(f1, userA);
         assertTrue(again.getLikes().contains(userA));
-        assertEquals(1, again.getLikes().size());
+        assertEquals(1, again.getLikes().size(), "Повторный лайк не должен дублироваться");
     }
 
     @Test
@@ -88,7 +93,7 @@ class FilmServiceLikesTest {
 
         Film again = filmService.removeLike(f2, userA);
         assertFalse(again.getLikes().contains(userA));
-        assertEquals(0, again.getLikes().size());
+        assertEquals(0, again.getLikes().size(), "Повторное удаление лайка не должно падать/менять состояние");
     }
 
     @Test
@@ -113,15 +118,27 @@ class FilmServiceLikesTest {
 
         List<Film> top2 = new ArrayList<>(top2Coll);
 
-        assertEquals(f2, top2.get(0).getId());
+        assertEquals(f2, top2.get(0).getId(), "Первым должен быть фильм с наибольшим числом лайков");
         Set<Long> secondCandidates = Set.of(f1, f3);
-        assertTrue(secondCandidates.contains(top2.get(1).getId()));
+        assertTrue(secondCandidates.contains(top2.get(1).getId()),
+                "Вторым должен быть один из фильмов с по одному лайку");
     }
-
 
     @Test
     void getPopular_invalidCount_shouldThrowIllegalArgument() {
         assertThrows(IllegalArgumentException.class, () -> filmService.getPopular(0));
         assertThrows(IllegalArgumentException.class, () -> filmService.getPopular(-5));
+    }
+
+    static class DummyGenreService extends GenreService {
+        public DummyGenreService() {
+            super(null);
+        }
+    }
+
+    static class DummyMpaService extends MpaService {
+        public DummyMpaService() {
+            super(null);
+        }
     }
 }
