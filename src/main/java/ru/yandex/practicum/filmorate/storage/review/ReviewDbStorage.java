@@ -63,17 +63,6 @@ public class ReviewDbStorage implements ReviewStorage {
     }
 
     @Override
-    public Optional<Review> findByFilmIdAndUserId(Long filmId, Long userId) {
-        String sql = "SELECT * FROM review WHERE film_id = ? AND user_id = ?";
-        try {
-            Review review = jdbcTemplate.queryForObject(sql, this::mapRowToReview, filmId, userId);
-            return Optional.ofNullable(review);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
-
-    @Override
     public void delete(Long reviewId) {
         String sql = "DELETE FROM review WHERE review_id = ?";
         int rowsDeleted = jdbcTemplate.update(sql, reviewId);

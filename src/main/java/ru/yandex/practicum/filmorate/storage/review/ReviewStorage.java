@@ -12,8 +12,6 @@ public interface ReviewStorage {
 
     void delete(Long reviewId);
 
-    Optional<Review> findByFilmIdAndUserId(Long filmId, Long userId);
-
     List<Review> findByFilmId(Long filmId, int count);
 
     List<Review> findAll(int count);
