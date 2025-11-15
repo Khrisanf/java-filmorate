@@ -110,10 +110,10 @@ public class DirectorDbStorage implements DirectorStorage {
     @Override
     public Set<Director> findDirectorsByFilmId(long filmId) {
         String sql = """
-            SELECT d.id, d.name 
-            FROM film_directors fd 
-            JOIN directors d ON d.id = fd.director_id 
-            WHERE fd.film_id = ? 
+            SELECT d.id, d.name
+            FROM film_directors fd
+            JOIN directors d ON d.id = fd.director_id
+            WHERE fd.film_id = ?
             ORDER BY d.id
             """;
 
@@ -126,10 +126,10 @@ public class DirectorDbStorage implements DirectorStorage {
 
         String placeholders = filmIds.stream().map(id -> "?").collect(Collectors.joining(","));
         String sql = String.format("""
-            SELECT d.id, d.name 
-            FROM film_directors fd 
-            JOIN directors d ON d.id = fd.director_id 
-            WHERE fd.film_id IN (%s) 
+            SELECT d.id, d.name
+            FROM film_directors fd
+            JOIN directors d ON d.id = fd.director_id
+            WHERE fd.film_id IN (%s)
             ORDER BY d.id
             """, placeholders);
 
