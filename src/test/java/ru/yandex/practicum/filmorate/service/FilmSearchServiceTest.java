@@ -107,7 +107,7 @@ class FilmSearchServiceTest {
         assertEquals(1L, result.get(0).getId());
     }
 
-    // helper
+    // ===helper
     private Film film(Long id, String name, int likesCount) {
         Film film = Film.builder()
                 .id(id)
