@@ -8,15 +8,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.film.Director;
 import ru.yandex.practicum.filmorate.storage.film.DirectorStorage;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
