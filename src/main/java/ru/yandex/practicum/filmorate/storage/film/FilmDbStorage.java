@@ -60,7 +60,7 @@ public class FilmDbStorage implements FilmStorage {
             return ps;
         }, keyHolder);
 
-        film.setId(keyHolder.getKey().longValue());
+        film.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
         replaceFilmGenres(film.getId(), film.getGenres());
         return findById(film.getId()).orElseThrow();
     }
@@ -156,6 +156,7 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    // overload
     @Override
     public Collection<Film> findPopular(int count, Integer genreId, Integer year) {
         StringBuilder sql = new StringBuilder("""
