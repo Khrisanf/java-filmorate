@@ -58,9 +58,12 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public ResponseEntity<Collection<Film>> getPopularFilms(@RequestParam(defaultValue = "10") int count) {
-        Collection<Film> films = filmService.getPopular(count);
+    public ResponseEntity<Collection<Film>> getPopularFilms(
+            @RequestParam(defaultValue = "10") int count,
+            @RequestParam(required = false) Integer genreId,
+            @RequestParam(required = false) Integer year
+    ) {
+        Collection<Film> films = filmService.getPopular(count, genreId, year);
         return ResponseEntity.ok(films);
     }
-
 }

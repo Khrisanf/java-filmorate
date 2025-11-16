@@ -156,6 +156,51 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    @Override
+    public Collection<Film> findPopular(int count, Integer genreId, Integer year) {
+        StringBuilder sql = new StringBuilder("""
+        SELECT f.id, f.name, f.description, f.release_date, f.duration,
+               mr.id AS mpa_id, mr.name AS mpa_name,
+               COUNT(l.user_id) AS likes_cnt
+        FROM films f
+        LEFT JOIN mpa_ratings mr ON mr.id = f.mpa_rating_id
+        LEFT JOIN likes l ON l.film_id = f.id
+    """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (genreId != null) {
+            sql.append(" JOIN film_genres fg ON fg.film_id = f.id ");
+        }
+
+        sql.append(" WHERE 1=1 ");
+
+        if (genreId != null) {
+            sql.append(" AND fg.genre_id = ? ");
+            params.add(genreId);
+        }
+
+        if (year != null) {
+            sql.append(" AND EXTRACT(YEAR FROM f.release_date) = ? ");
+            params.add(year);
+        }
+
+        sql.append("""
+        GROUP BY f.id, f.name, f.description, f.release_date, f.duration, mr.id, mr.name
+        ORDER BY likes_cnt DESC, f.id
+        LIMIT ?
+    """);
+        params.add(count);
+
+        List<Film> films = jdbcTemplate.query(
+                sql.toString(),
+                (rs, rn) -> mapRowToFilm(rs),
+                params.toArray()
+        );
+        loadGenresBulk(films);
+        return films;
+    }
+
     private Film mapRowToFilm(ResultSet rs) throws SQLException {
         Film film = Film.builder()
                 .id(rs.getLong("id"))

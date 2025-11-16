@@ -81,6 +81,19 @@ public class FilmService {
         return filmStorage.findPopular(count);
     }
 
+    @Transactional(readOnly = true)
+    public Collection<Film> getPopular(int count, Integer genreId, Integer year) {
+        if (count <= 0) {
+            throw new IllegalArgumentException("Count must be greater than 0");
+        }
+        if (genreId == null && year == null) {
+            return filmStorage.findPopular(count);
+        }
+
+        return filmStorage.findPopular(count, genreId, year);
+    }
+
+
     private Film ensureFilmExists(long id) {
         return filmStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Film not found: id=" + id));
