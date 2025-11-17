@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.memory.InMemoryFilmStorage;
@@ -105,6 +106,49 @@ class FilmServiceLikesTest {
     void addLike_unknownUser_shouldThrow404() {
         assertThrows(NotFoundException.class, () -> filmService.addLike(f1, 999_999L));
     }
+
+    @Test
+    @DisplayName("При корректных вводных, должен возвращаться правильный фильм в качестве рекомендации")
+    void shouldFindRecommendationsCorrectly() {
+        Long userC = createAndSaveUser("john@example.com", "john", "John").getId();
+        Long userD = createAndSaveUser("jeffry@example.com", "jeffry", "Jeffry").getId();
+        filmService.addLike(f1, userA);
+        filmService.addLike(f2, userA);
+        filmService.addLike(f2, userB);
+        filmService.addLike(f3, userB);
+        filmService.addLike(f1, userC);
+        filmService.addLike(f3, userC);
+        filmService.addLike(f1, userD);
+        filmService.addLike(f2, userD);
+        filmService.addLike(f3, userD);
+        List<Film> recommendations = filmService.getRecommendations(userA);
+        assertNotNull(recommendations);
+        assertEquals(1, recommendations.size());
+        assertNotNull(recommendations.get(0));
+        assertNotNull(recommendations.get(0).getId());
+        assertEquals(3, recommendations.get(0).getId());
+    }
+
+    @Test
+    @DisplayName("Должен выбрасывать исключение, если пользователь не существует")
+    void shouldThrowNotFoundExceptionFOrNotExistedUser() {
+        assertThrows(NotFoundException.class, () -> filmService.getRecommendations(10L));
+    }
+
+    @Test
+    @DisplayName("Если у всех пользователей одинаковые лайки, возвращать пустой список")
+    void shouldReturnEmptyListIfEveryUserHaveSameLikes() {
+        Long userC = createAndSaveUser("john@example.com", "john", "John").getId();
+        Long userD = createAndSaveUser("jeffry@example.com", "jeffry", "Jeffry").getId();
+        filmService.addLike(f1, userA);
+        filmService.addLike(f2, userA);
+        filmService.addLike(f1, userB);
+        filmService.addLike(f2, userB);
+        List<Film> recommendations = filmService.getRecommendations(userA);
+        assertNotNull(recommendations);
+        assertEquals(0, recommendations.size());
+    }
+
 
     @Test
     void popular_shouldOrderByLikes_andRespectCount() {
