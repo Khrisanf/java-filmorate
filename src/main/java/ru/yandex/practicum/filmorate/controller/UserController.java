@@ -73,7 +73,7 @@ public class UserController {
     public ResponseEntity<Collection<User>> getCommonFriends(@PathVariable long id, @PathVariable long otherId) {
         return ResponseEntity.ok(userService.findMutualFriends(id, otherId));
     }
-
+    /** Поиск рекомендаций фильмов */
     @GetMapping("/{id}/recommendations")
     public ResponseEntity<Collection<Film>> getRecommendations(@PathVariable long id) {
         return ResponseEntity.ok(filmService.getRecommendations(id));
