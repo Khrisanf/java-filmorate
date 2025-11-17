@@ -156,6 +156,24 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    @Override
+    public Collection<Film> findLikesByUserId(long userId) {
+        final String sql = """
+                    SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                           mr.id AS mpa_id, mr.name AS mpa_name,
+                           COUNT(l.user_id) AS likes_cnt
+                    FROM films f
+                    LEFT JOIN mpa_ratings mr ON mr.id = f.mpa_rating_id
+                    LEFT JOIN likes l ON l.film_id = f.id
+                    WHERE l.user_id = ?
+                    GROUP BY f.id, f.name, f.description, f.release_date, f.duration, mr.id, mr.name
+                """;
+        List<Film> films = jdbcTemplate.query(sql, (rs, rn) -> mapRowToFilm(rs), userId);
+        loadGenresBulk(films);
+        return films;
+    }
+
+
     private Film mapRowToFilm(ResultSet rs) throws SQLException {
         Film film = Film.builder()
                 .id(rs.getLong("id"))

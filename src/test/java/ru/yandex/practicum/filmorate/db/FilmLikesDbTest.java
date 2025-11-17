@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.CollectionAssert.assertThatCollection;
 
 
 @JdbcTest
@@ -83,4 +84,13 @@ class FilmLikesDbTest implements FilmorateTestSupport {
         assertThatThrownBy(() -> filmStorage.addLike(a.getId(), 9999L))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
+
+    @Test
+    void findLikesByUserId_shouldReturnCorrectly() {
+        filmStorage.addLike(a.getId(), userId);
+        filmStorage.addLike(b.getId(), userId);
+        Collection<Film> likes = filmStorage.findLikesByUserId(userId);
+        assertThatCollection(likes).containsExactly(a, b);
+    }
+
 }
