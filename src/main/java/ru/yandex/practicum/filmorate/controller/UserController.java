@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.film.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.net.URI;
@@ -18,6 +20,8 @@ import java.util.Collection;
 public class UserController {
 
     private final UserService userService;
+    private final FilmService filmService;
+
 
     @PostMapping
     public ResponseEntity<User> create(@RequestBody @Valid User user) {
@@ -69,4 +73,11 @@ public class UserController {
     public ResponseEntity<Collection<User>> getCommonFriends(@PathVariable long id, @PathVariable long otherId) {
         return ResponseEntity.ok(userService.findMutualFriends(id, otherId));
     }
+
+    /** Поиск рекомендаций фильмов  */
+    @GetMapping("/{id}/recommendations")
+    public ResponseEntity<Collection<Film>> getRecommendations(@PathVariable long id) {
+        return ResponseEntity.ok(filmService.getRecommendations(id));
+    }
+
 }
