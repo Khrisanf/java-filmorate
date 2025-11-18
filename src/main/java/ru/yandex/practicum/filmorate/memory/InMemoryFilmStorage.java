@@ -131,7 +131,7 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .peek(film -> film.setDirectors(directorStorage.findDirectorsByFilmId(film.getId())))
                 .collect(Collectors.toList());
     }
-    
+
     private Film getOrThrow(long id) {
         Film film = films.get(id);
         if (film == null) {
