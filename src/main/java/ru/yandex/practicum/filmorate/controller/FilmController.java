@@ -23,7 +23,6 @@ public class FilmController {
         return ResponseEntity.created(location).body(created);
     }
 
-
     @PutMapping
     public ResponseEntity<Film> update(@RequestBody @Valid Film film) {
         Film updatedFilm = filmService.update(film);
@@ -63,4 +62,12 @@ public class FilmController {
         return ResponseEntity.ok(films);
     }
 
+    @GetMapping("/director/{directorId}")
+    public ResponseEntity<Collection<Film>> getFilmsByDirector(
+            @PathVariable int directorId,
+            @RequestParam String sortBy) {
+        Collection<Film> films = filmService.getFilmsByDirector(directorId, sortBy);
+        return ResponseEntity.ok(films);
+    }
 }
+
