@@ -159,44 +159,6 @@ public class FilmDbStorage implements FilmStorage {
                 """;
         List<Film> films = jdbcTemplate.query(sql, (rs, rn) -> mapRowToFilm(rs), count);
         loadGenresBulk(films);
-        loadDirectorsBulk(films);
-        return films;
-    }
-
-    @Override
-    public Collection<Film> findFilmsByDirectorSortedByYear(int directorId) {
-        String sql = SQL_FILMS_BASE + """
-                WHERE f.id IN (
-                    SELECT film_id FROM film_directors WHERE director_id = ?
-                )
-                ORDER BY f.release_date
-                """;
-
-        List<Film> films = Collections.singletonList(jdbcTemplate.query(sql, this::mapRowToFilm, directorId));
-        loadGenresBulk(films);
-        loadDirectorsBulk(films);
-        return films;
-    }
-
-    @Override
-    public Collection<Film> findFilmsByDirectorSortedByLikes(int directorId) {
-        String sql = """
-                SELECT f.id, f.name, f.description, f.release_date, f.duration,
-                       mr.id AS mpa_id, mr.name AS mpa_name,
-                       COUNT(l.user_id) AS likes_cnt
-                FROM films f
-                LEFT JOIN mpa_ratings mr ON mr.id = f.mpa_rating_id
-                LEFT JOIN likes l ON l.film_id = f.id
-                WHERE f.id IN (
-                    SELECT film_id FROM film_directors WHERE director_id = ?
-                )
-                GROUP BY f.id, f.name, f.description, f.release_date, f.duration, mr.id, mr.name
-                ORDER BY likes_cnt DESC, f.id
-                """;
-
-        List<Film> films = Collections.singletonList(jdbcTemplate.query(sql, this::mapRowToFilm, directorId));
-        loadGenresBulk(films);
-        loadDirectorsBulk(films);
         return films;
     }
 
@@ -217,8 +179,6 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
-
-    // overload
     @Override
     public Collection<Film> findPopular(int count, Integer genreId, Integer year) {
         StringBuilder sql = new StringBuilder("""
@@ -261,6 +221,43 @@ public class FilmDbStorage implements FilmStorage {
                 params.toArray()
         );
         loadGenresBulk(films);
+        return films;
+    }
+
+    @Override
+    public Collection<Film> findFilmsByDirectorSortedByYear(int directorId) {
+        String sql = SQL_FILMS_BASE + """
+                WHERE f.id IN (
+                    SELECT film_id FROM film_directors WHERE director_id = ?
+                )
+                ORDER BY f.release_date
+                """;
+
+        List<Film> films = Collections.singletonList(jdbcTemplate.query(sql, this::mapRowToFilm, directorId));
+        loadGenresBulk(films);
+        loadDirectorsBulk(films);
+        return films;
+    }
+
+    @Override
+    public Collection<Film> findFilmsByDirectorSortedByLikes(int directorId) {
+        String sql = """
+                SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                       mr.id AS mpa_id, mr.name AS mpa_name,
+                       COUNT(l.user_id) AS likes_cnt
+                FROM films f
+                LEFT JOIN mpa_ratings mr ON mr.id = f.mpa_rating_id
+                LEFT JOIN likes l ON l.film_id = f.id
+                WHERE f.id IN (
+                    SELECT film_id FROM film_directors WHERE director_id = ?
+                )
+                GROUP BY f.id, f.name, f.description, f.release_date, f.duration, mr.id, mr.name
+                ORDER BY likes_cnt DESC, f.id
+                """;
+
+        List<Film> films = Collections.singletonList(jdbcTemplate.query(sql, this::mapRowToFilm, directorId));
+        loadGenresBulk(films);
+        loadDirectorsBulk(films);
         return films;
     }
 
