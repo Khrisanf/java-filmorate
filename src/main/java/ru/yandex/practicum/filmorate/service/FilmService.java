@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.film.Director;
-import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -99,18 +98,6 @@ public class FilmService {
         }
     }
 
-    public Collection<Film> getPopular(int count, Integer genreId, Integer year) {
-        if (count <= 0) {
-            throw new IllegalArgumentException("Count must be greater than 0");
-        }
-        if (genreId == null && year == null) {
-            return filmStorage.findPopular(count);
-        }
-
-        return filmStorage.findPopular(count, genreId, year);
-    }
-
-
     private Film ensureFilmExists(long id) {
         return filmStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Film not found: id=" + id));
@@ -181,60 +168,4 @@ public class FilmService {
         film.setDirectors(filled);
         return film;
     }
-}
-    @Transactional(readOnly = true)
-    public List<Film> getRecommendations(long userId) {
-        ensureUserExists(userId);
-        Optional<User> userIdWithMostSameLikes = findUserWithMostSameLikes(userId);
-        if (userIdWithMostSameLikes.isPresent()) {
-            return findNotSeenFilms(userId, userIdWithMostSameLikes.get().getId());
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
-    private Optional<User> findUserWithMostSameLikes(long userId) {
-        Collection<Film> userLikes = filmStorage.findLikesByUserId(userId);
-        SortedMap<Double, User> neighborDistance = new TreeMap<>();
-        Set<Film> filmsToCheck = new HashSet<>();
-        for (User user : userStorage.findAll()) {
-            if (user.getId() == userId) {
-                continue;
-            }
-            Collection<Film> otherUserLikes = filmStorage.findLikesByUserId(user.getId());
-            filmsToCheck = refillFilmsToCheck(filmsToCheck, userLikes, otherUserLikes);
-            double distanceToOtherUser = calculateDistanceToOtherUser(filmsToCheck, userLikes, otherUserLikes);
-            neighborDistance.put(distanceToOtherUser, user);
-        }
-        if (!neighborDistance.isEmpty()) {
-            return Optional.of(neighborDistance.pollFirstEntry().getValue());
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    private static Set<Film> refillFilmsToCheck(Set<Film> filmsToCheck, Collection<Film> userLikes, Collection<Film> otherUserLikes) {
-        filmsToCheck.clear();
-        filmsToCheck.addAll(userLikes);
-        filmsToCheck.addAll(otherUserLikes);
-        return filmsToCheck;
-    }
-
-    private static double calculateDistanceToOtherUser(Set<Film> filmsToCheck, Collection<Film> userLikes, Collection<Film> otherUserLikes) {
-        double distanceToOtherUser = 0;
-        for (Film film : filmsToCheck) {
-            int userLikedFilm = userLikes.contains(film) ? 1 : 0;
-            int otherUserLikedFilm = otherUserLikes.contains(film) ? 1 : 0;
-            distanceToOtherUser += Math.pow(userLikedFilm - otherUserLikedFilm, 2);
-        }
-        distanceToOtherUser = Math.sqrt(distanceToOtherUser);
-        return distanceToOtherUser;
-    }
-
-    private List<Film> findNotSeenFilms(long userId, long otherUserId) {
-        Collection<Film> userLikes = filmStorage.findLikesByUserId(userId);
-        Collection<Film> otherUserLikes = filmStorage.findLikesByUserId(otherUserId);
-        return otherUserLikes.stream().filter(f -> !userLikes.contains(f)).toList();
-    }
-
 }
