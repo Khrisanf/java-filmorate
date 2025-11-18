@@ -131,6 +131,7 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .peek(film -> film.setDirectors(directorStorage.findDirectorsByFilmId(film.getId())))
                 .collect(Collectors.toList());
     }
+    
     public Collection<Film> findPopular(int count, Integer genreId, Integer year) {
         return films.values().stream()
                 .filter(film -> {
