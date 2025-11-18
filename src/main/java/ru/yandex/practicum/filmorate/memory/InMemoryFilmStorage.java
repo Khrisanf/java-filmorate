@@ -131,51 +131,6 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .peek(film -> film.setDirectors(directorStorage.findDirectorsByFilmId(film.getId())))
                 .collect(Collectors.toList());
     }
-    
-    public Collection<Film> findPopular(int count, Integer genreId, Integer year) {
-        return films.values().stream()
-                .filter(film -> {
-                    if (genreId == null) {
-                        return true;
-                    }
-                    if (film.getGenres() == null) {
-                        return false;
-                    }
-                    return film.getGenres().stream()
-                            .filter(Objects::nonNull)
-                            .anyMatch(g -> Objects.equals(g.getId(), genreId));
-                })
-                .filter(film -> {
-                    if (year == null) {
-                        return true;
-                    }
-                    if (film.getReleaseDate() == null) {
-                        return false;
-                    }
-                    return film.getReleaseDate().getYear() == year;
-                })
-                .sorted(
-                        Comparator
-                                .comparingInt((Film f) -> f.getLikes() == null ? 0 : f.getLikes().size())
-                                .reversed()
-                                .thenComparingLong(Film::getId)
-                )
-                .limit(count)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public Collection<Film> findLikesByUserId(long userId) {
-        Collection<Film> likedFilms = new ArrayList<>();
-        for (Film film : films.values()) {
-            if (film.getLikes().contains(userId)) {
-                likedFilms.add(film);
-            }
-        }
-        return likedFilms;
-    }
-
-
     private Film getOrThrow(long id) {
         Film film = films.get(id);
         if (film == null) {
