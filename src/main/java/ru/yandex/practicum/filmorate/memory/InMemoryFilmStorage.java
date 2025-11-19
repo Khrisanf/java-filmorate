@@ -123,6 +123,18 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Collection<Film> findLikesByUserId(long userId) {
+        Collection<Film> likedFilms = new ArrayList<>();
+        for (Film film : films.values()) {
+            if (film.getLikes().contains(userId)) {
+                likedFilms.add(film);
+            }
+        }
+        return likedFilms;
+    }
+
+
     private Film getOrThrow(long id) {
         Film film = films.get(id);
         if (film == null) {
