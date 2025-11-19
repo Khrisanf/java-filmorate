@@ -23,4 +23,6 @@ public interface FilmStorage {
     Collection<Film> findPopular(int count);
 
     Collection<Film> findPopular(int count, Integer genreId, Integer year);
+
+    Collection<Film> findLikesByUserId(long userId);
 }
