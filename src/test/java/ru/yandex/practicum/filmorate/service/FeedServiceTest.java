@@ -8,7 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.yandex.practicum.filmorate.model.event.EventOperation;
 import ru.yandex.practicum.filmorate.model.event.EventType;
 import ru.yandex.practicum.filmorate.model.event.FeedEvent;
-import ru.yandex.practicum.filmorate.model.event.FeedEventDto;
+import ru.yandex.practicum.filmorate.model.event.FeedEventResponse;
 import ru.yandex.practicum.filmorate.storage.user.FeedEventStorage;
 
 import java.util.Arrays;
@@ -36,12 +36,12 @@ class FeedServiceTest {
         );
         when(feedEventStorage.findByUserIdOrderByTimestampAsc(userId)).thenReturn(mockEvents);
 
-        List<FeedEventDto> result = feedService.getUserFeed(userId);
+        List<FeedEventResponse> result = feedService.getUserFeed(userId);
 
         assertNotNull(result);
         assertEquals(2, result.size());
 
-        FeedEventDto firstEvent = result.get(0);
+        FeedEventResponse firstEvent = result.get(0);
         assertEquals(1L, firstEvent.getEventId());
         assertEquals(1L, firstEvent.getUserId());
         assertEquals(EventType.LIKE, firstEvent.getEventType());
@@ -57,7 +57,7 @@ class FeedServiceTest {
         Long userId = 1L;
         when(feedEventStorage.findByUserIdOrderByTimestampAsc(userId)).thenReturn(Collections.emptyList());
 
-        List<FeedEventDto> result = feedService.getUserFeed(userId);
+        List<FeedEventResponse> result = feedService.getUserFeed(userId);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -108,7 +108,7 @@ class FeedServiceTest {
         );
         when(feedEventStorage.findByUserIdOrderByTimestampAsc(userId)).thenReturn(mockEvents);
 
-        List<FeedEventDto> result = feedService.getUserFeed(userId);
+        List<FeedEventResponse> result = feedService.getUserFeed(userId);
 
         assertEquals(3, result.size());
         assertEquals(1000L, result.get(0).getTimestamp());

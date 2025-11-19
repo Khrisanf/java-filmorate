@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.filmorate.model.event.FeedEventDto;
+import ru.yandex.practicum.filmorate.model.event.FeedEventResponse;
 import ru.yandex.practicum.filmorate.service.FeedService;
 
 import java.util.List;
@@ -17,8 +17,8 @@ public class FeedController {
     private final FeedService feedService;
 
     @GetMapping("/users/{id}/feed")
-    public ResponseEntity<List<FeedEventDto>> getUserFeed(@PathVariable("id") Long userId) {
-        List<FeedEventDto> feed = feedService.getUserFeed(userId);
+    public ResponseEntity<List<FeedEventResponse>> getUserFeed(@PathVariable("id") Long userId) {
+        List<FeedEventResponse> feed = feedService.getUserFeed(userId);
         return ResponseEntity.ok(feed);
     }
 }

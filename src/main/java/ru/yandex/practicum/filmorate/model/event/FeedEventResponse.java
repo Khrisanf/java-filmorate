@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Builder
 @Data
-public class FeedEventDto {
+public class FeedEventResponse {
     private Long timestamp;
     private Long userId;
     private EventType eventType;
