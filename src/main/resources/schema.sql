@@ -79,7 +79,8 @@ create TABLE IF NOT EXISTS review
 );
 
 --REVIEW LIKES (USER ↔ REVIEW)
-create TABLE IF NOT EXISTS review_likes (
+create TABLE IF NOT EXISTS review_likes
+(
     review_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     is_like BOOLEAN NOT NULL,
@@ -88,7 +89,25 @@ create TABLE IF NOT EXISTS review_likes (
     FOREIGN KEY (user_id) REFERENCES users(id) ON delete CASCADE
 );
 
+--USER FEED EVENTS
+CREATE TABLE IF NOT EXISTS user_feed_events
+(
+    event_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    actor_id BIGINT NOT NULL,
+    event_type VARCHAR(16) NOT NULL CHECK (event_type IN ('LIKE', 'REVIEW', 'FRIEND')),
+    operation VARCHAR(16) NOT NULL CHECK (operation IN ('ADD', 'REMOVE', 'UPDATE')),
+    entity_id BIGINT NOT NULL,
+    entity_type VARCHAR(50),
+    timestamp BIGINT NOT NULL,
+    additional_data TEXT
+);
+
+-- Отдельно создаем индексы
+
 -- INDEXES
+CREATE INDEX IF NOT EXISTS idx_user_timestamp ON user_feed_events (user_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_actor ON user_feed_events (actor_id);
 create index IF NOT EXISTS idx_friendships_friend ON friendships (friend_id);
 create index IF NOT EXISTS idx_likes_user ON likes (user_id);
 create index IF NOT EXISTS idx_film_genres_genre ON film_genres (genre_id);

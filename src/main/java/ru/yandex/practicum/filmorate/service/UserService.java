@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.event.EventOperation;
+import ru.yandex.practicum.filmorate.model.event.EventType;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
@@ -17,6 +19,8 @@ import java.util.Collection;
 public class UserService {
 
     private final UserStorage userStorage;
+    private final FeedService feedService;
+
 
     @PostConstruct
     void which() {
@@ -68,6 +72,9 @@ public class UserService {
         if (userId == friendId) {
             throw new IllegalArgumentException("Cannot add yourself as a friend");
         }
+        feedService.addEvent(userId, userId, EventType.FRIEND, EventOperation.ADD, friendId, "USER");
+
+        feedService.addEvent(friendId, userId, EventType.FRIEND, EventOperation.ADD, userId, "USER");
         log.info("===Adding friends to friends list: id={}", userId);
         ensureUserExists(userId);
         ensureUserExists(friendId);
@@ -77,6 +84,9 @@ public class UserService {
     @Transactional
     public User removeFriends(long userId, long friendId) {
         log.info("===Removing friends from friends list: id={}", userId);
+        feedService.addEvent(userId, userId, EventType.FRIEND, EventOperation.REMOVE, friendId, "USER");
+
+        feedService.addEvent(friendId, userId, EventType.FRIEND, EventOperation.REMOVE, userId, "USER");
         ensureUserExists(userId);
         ensureUserExists(friendId);
         return userStorage.removeFriend(userId, friendId);
