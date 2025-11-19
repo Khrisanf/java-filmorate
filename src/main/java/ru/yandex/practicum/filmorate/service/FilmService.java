@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
+import ru.yandex.practicum.filmorate.model.event.EventOperation;
+import ru.yandex.practicum.filmorate.model.event.EventType;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -21,6 +23,7 @@ public class FilmService {
     private final UserStorage userStorage;
     private final GenreService genreService;
     private final MpaService mpaService;
+    private final FeedService feedService;
 
     @Transactional
     public Film create(Film film) {
@@ -63,6 +66,7 @@ public class FilmService {
     public Film addLike(long filmId, long userId) {
         ensureFilmExists(filmId);
         ensureUserExists(userId);
+        feedService.addEvent(userId,userId, EventType.LIKE, EventOperation.ADD,filmId,"FILM");
         return filmStorage.addLike(filmId, userId);
     }
 
@@ -70,6 +74,7 @@ public class FilmService {
     public Film removeLike(long filmId, long userId) {
         ensureFilmExists(filmId);
         ensureUserExists(userId);
+        feedService.addEvent(userId,userId, EventType.LIKE, EventOperation.REMOVE,filmId,"FILM");
         return filmStorage.removeLike(filmId, userId);
     }
 
