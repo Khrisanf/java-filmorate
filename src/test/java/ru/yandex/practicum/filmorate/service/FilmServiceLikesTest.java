@@ -38,7 +38,8 @@ class FilmServiceLikesTest {
                 filmStorage,
                 userStorage,
                 new DummyGenreService(),
-                new DummyMpaService()
+                new DummyMpaService(),
+                new TestFeedService()
         );
 
         userA = createAndSaveUser("alice@example.com", "alice", "Alice").getId();

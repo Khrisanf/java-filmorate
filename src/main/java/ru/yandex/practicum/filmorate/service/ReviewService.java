@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.model.event.EventOperation;
+import ru.yandex.practicum.filmorate.model.event.EventType;
 import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -18,6 +20,7 @@ public class ReviewService {
 
     private final ReviewStorage reviewStorage;
     private final UserStorage userStorage;
+    private final FeedService feedService;
 
     @Transactional
     public Review createReview(Review review) {
@@ -25,6 +28,12 @@ public class ReviewService {
         validateId(review.getUserId(), "userId");
         validateId(review.getFilmId(), "filmId");
         Review created = reviewStorage.save(review);
+        feedService.addEvent(review.getUserId(),
+                review.getUserId(),
+                EventType.REVIEW,
+                EventOperation.ADD,
+                review.getReviewId(),
+                "REVIEW");
         log.info("Отзыв создан с id {}", created.getReviewId());
         return created;
     }
@@ -37,6 +46,13 @@ public class ReviewService {
         existingReview.setContent(review.getContent());
         existingReview.setIsPositive(review.getIsPositive());
         Review updated = reviewStorage.save(existingReview);
+
+        feedService.addEvent(updated.getUserId(),
+                updated.getUserId(),
+                EventType.REVIEW,
+                EventOperation.UPDATE,
+                updated.getReviewId(),
+                "REVIEW");
         log.info("Отзыв с id {} обновлен", updated.getReviewId());
         return updated;
     }
@@ -60,7 +76,16 @@ public class ReviewService {
     @Transactional
     public void deleteReview(Long reviewId) {
         log.info("Удаление отзыва с id {}", reviewId);
+        Review review = reviewStorage.findById(reviewId)
+                .orElseThrow(() -> new NotFoundException("Отзыв с id " + reviewId + " не найден"));
         reviewStorage.delete(reviewId);
+
+        feedService.addEvent(review.getUserId(),
+                review.getUserId(),
+                EventType.REVIEW,
+                EventOperation.REMOVE,
+                reviewId,
+                "REVIEW");
         log.info("Отзыв с id {} удален", reviewId);
     }
 

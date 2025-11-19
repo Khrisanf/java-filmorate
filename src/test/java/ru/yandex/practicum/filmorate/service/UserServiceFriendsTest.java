@@ -27,7 +27,7 @@ class UserServiceFriendsTest {
     @BeforeEach
     void setUp() {
         userStorage = new InMemoryUserStorage();
-        userService = new UserService(userStorage);
+        userService = new UserService(userStorage,new TestFeedService());
 
         u1Id = createUser("alice@example.com", "alice", "Alice", LocalDate.of(1990, 1, 1)).getId();
         u2Id = createUser("bob@example.com", "bob", "Bob", LocalDate.of(1991, 2, 2)).getId();
