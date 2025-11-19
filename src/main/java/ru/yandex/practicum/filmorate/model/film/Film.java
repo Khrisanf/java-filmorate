@@ -14,10 +14,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-
-/**
- * Film.
- */
 @Data
 @Builder
 public class Film {
@@ -43,4 +39,7 @@ public class Film {
 
     @Builder.Default
     private Set<Long> likes = new HashSet<>();
+
+    @Builder.Default
+    private Set<Director> directors = new LinkedHashSet<>();
 }

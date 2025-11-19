@@ -5,10 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.event.EventOperation;
 import ru.yandex.practicum.filmorate.model.event.EventType;
+import ru.yandex.practicum.filmorate.model.film.Director;
 import ru.yandex.practicum.filmorate.model.film.Film;
-import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.film.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -25,11 +26,31 @@ public class FilmService {
     private final GenreService genreService;
     private final MpaService mpaService;
     private final FeedService feedService;
+    private final DirectorService directorService;
+
+    private static Set<Film> refillFilmsToCheck(Set<Film> filmsToCheck, Collection<Film> userLikes, Collection<Film> otherUserLikes) {
+        filmsToCheck.clear();
+        filmsToCheck.addAll(userLikes);
+        filmsToCheck.addAll(otherUserLikes);
+        return filmsToCheck;
+    }
+
+    private static double calculateDistanceToOtherUser(Set<Film> filmsToCheck, Collection<Film> userLikes, Collection<Film> otherUserLikes) {
+        double distanceToOtherUser = 0;
+        for (Film film : filmsToCheck) {
+            int userLikedFilm = userLikes.contains(film) ? 1 : 0;
+            int otherUserLikedFilm = otherUserLikes.contains(film) ? 1 : 0;
+            distanceToOtherUser += Math.pow(userLikedFilm - otherUserLikedFilm, 2);
+        }
+        distanceToOtherUser = Math.sqrt(distanceToOtherUser);
+        return distanceToOtherUser;
+    }
 
     @Transactional
     public Film create(Film film) {
         validateMpaAndGenre(film);
-        Film created = filmStorage.create(fillGenres(film));
+        validateDirectors(film);
+        Film created = filmStorage.create(fillGenres(fillDirectors(film)));
         log.info("Film created: id={}, name='{}'", created.getId(), created.getName());
         return created;
     }
@@ -38,7 +59,8 @@ public class FilmService {
     public Film update(Film film) {
         ensureFilmExists(film.getId());
         validateMpaAndGenre(film);
-        Film updated = filmStorage.update(fillGenres(film));
+        validateDirectors(film);
+        Film updated = filmStorage.update(fillGenres(fillDirectors(film)));
         log.info("Film updated: id={}", updated.getId());
         return updated;
     }
@@ -67,7 +89,7 @@ public class FilmService {
     public Film addLike(long filmId, long userId) {
         ensureFilmExists(filmId);
         ensureUserExists(userId);
-        feedService.addEvent(userId,userId, EventType.LIKE, EventOperation.ADD,filmId,"FILM");
+        feedService.addEvent(userId, userId, EventType.LIKE, EventOperation.ADD, filmId, "FILM");
         return filmStorage.addLike(filmId, userId);
     }
 
@@ -75,7 +97,7 @@ public class FilmService {
     public Film removeLike(long filmId, long userId) {
         ensureFilmExists(filmId);
         ensureUserExists(userId);
-        feedService.addEvent(userId,userId, EventType.LIKE, EventOperation.REMOVE,filmId,"FILM");
+        feedService.addEvent(userId, userId, EventType.LIKE, EventOperation.REMOVE, filmId, "FILM");
         return filmStorage.removeLike(filmId, userId);
     }
 
@@ -99,6 +121,18 @@ public class FilmService {
         return filmStorage.findPopular(count, genreId, year);
     }
 
+    @Transactional(readOnly = true)
+    public Collection<Film> getFilmsByDirector(int directorId, String sortBy) {
+        directorService.findById(directorId);
+
+        if ("year".equals(sortBy)) {
+            return filmStorage.findFilmsByDirectorSortedByYear(directorId);
+        } else if ("likes".equals(sortBy)) {
+            return filmStorage.findFilmsByDirectorSortedByLikes(directorId);
+        } else {
+            throw new IllegalArgumentException("Invalid sort parameter. Use 'year' or 'likes'");
+        }
+    }
 
     private Film ensureFilmExists(long id) {
         return filmStorage.findById(id)
@@ -127,6 +161,23 @@ public class FilmService {
             throw new NotFoundException("Genres not found: " + missing);
     }
 
+    private void validateDirectors(Film film) {
+        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
+            return;
+        }
+
+        var directorIds = film.getDirectors().stream()
+                .filter(Objects::nonNull)
+                .map(Director::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        var missing = directorService.findMissingIds(directorIds);
+        if (!missing.isEmpty()) {
+            throw new NotFoundException("Directors not found: " + missing);
+        }
+    }
+
     private Film fillGenres(Film f) {
         if (f.getGenres() == null || f.getGenres().isEmpty()) return f;
         var filled = f.getGenres().stream()
@@ -137,6 +188,21 @@ public class FilmService {
                 ));
         f.setGenres(filled);
         return f;
+    }
+
+    private Film fillDirectors(Film film) {
+        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
+            return film;
+        }
+
+        var filled = film.getDirectors().stream()
+                .filter(Objects::nonNull)
+                .filter(d -> d.getId() != null)
+                .collect(Collectors.toCollection(
+                        () -> new TreeSet<>(Comparator.comparingInt(Director::getId))
+                ));
+        film.setDirectors(filled);
+        return film;
     }
 
     @Transactional(readOnly = true)
@@ -168,24 +234,6 @@ public class FilmService {
         } else {
             return Optional.empty();
         }
-    }
-
-    private static Set<Film> refillFilmsToCheck(Set<Film> filmsToCheck, Collection<Film> userLikes, Collection<Film> otherUserLikes) {
-        filmsToCheck.clear();
-        filmsToCheck.addAll(userLikes);
-        filmsToCheck.addAll(otherUserLikes);
-        return filmsToCheck;
-    }
-
-    private static double calculateDistanceToOtherUser(Set<Film> filmsToCheck, Collection<Film> userLikes, Collection<Film> otherUserLikes) {
-        double distanceToOtherUser = 0;
-        for (Film film : filmsToCheck) {
-            int userLikedFilm = userLikes.contains(film) ? 1 : 0;
-            int otherUserLikedFilm = otherUserLikes.contains(film) ? 1 : 0;
-            distanceToOtherUser += Math.pow(userLikedFilm - otherUserLikedFilm, 2);
-        }
-        distanceToOtherUser = Math.sqrt(distanceToOtherUser);
-        return distanceToOtherUser;
     }
 
     private List<Film> findNotSeenFilms(long userId, long otherUserId) {

@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.SearchBy;
+import ru.yandex.practicum.filmorate.model.film.Director;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.search.SubstringMatcher;
 
@@ -21,25 +22,16 @@ public class FilmSearchService {
 
     public List<Film> search(String query, Set<SearchBy> searchBy) {
         String normalizedQuery = normalize(query);
-        if (normalizedQuery.isEmpty()) {
+
+        if (normalizedQuery.isEmpty() || searchBy == null || searchBy.isEmpty()) {
             return List.of();
         }
 
         Collection<Film> allFilms = filmService.findAll();
-
         Set<Film> result = new LinkedHashSet<>();
 
         for (Film film : allFilms) {
-            boolean matched = false;
-
-            if (searchBy.contains(SearchBy.TITLE)) {
-                String title = normalize(film.getName());
-                if (matcher.contains(title, normalizedQuery)) {
-                    matched = true;
-                }
-            }
-
-            if (matched) {
+            if (matchesFilm(film, normalizedQuery, searchBy)) {
                 result.add(film);
             }
         }
@@ -47,6 +39,31 @@ public class FilmSearchService {
         return result.stream()
                 .sorted(Comparator.comparingInt(this::getPopularity).reversed())
                 .collect(Collectors.toList());
+    }
+
+    private boolean matchesFilm(Film film, String normalizedQuery, Set<SearchBy> searchBy) {
+        // name search
+        if (searchBy.contains(SearchBy.TITLE)) {
+            String title = normalize(film.getName());
+            if (matcher.contains(title, normalizedQuery)) {
+                return true;
+            }
+        }
+
+        // directors search
+        if (searchBy.contains(SearchBy.DIRECTOR)) {
+            Set<Director> directors = film.getDirectors();
+            if (directors != null) {
+                for (Director director : directors) {
+                    String directorName = normalize(director.getName());
+                    if (matcher.contains(directorName, normalizedQuery)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private String normalize(String s) {
