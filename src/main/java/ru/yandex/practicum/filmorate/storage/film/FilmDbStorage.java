@@ -45,6 +45,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film create(Film film) {
+
         String sql = "INSERT INTO FILMS (name, description, release_date, duration, mpa_rating_id) VALUES (?,?,?,?,?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -185,6 +186,8 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+
+    // overload
     @Override
     public Collection<Film> findPopular(int count, Integer genreId, Integer year) {
         StringBuilder sql = new StringBuilder("""
@@ -276,6 +279,32 @@ public class FilmDbStorage implements FilmStorage {
         loadGenresBulk(films);
         loadLikesBulk(films);
         loadDirectorsBulk(films);
+        return films;
+    }
+
+    public Collection<Film> findCommonFilms(long userId, long friendId) {
+        final String sql = """
+                SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                       mr.id AS mpa_id, mr.name AS mpa_name,
+                       COUNT(l.user_id) AS likes_cnt
+                FROM films f
+                LEFT JOIN mpa_ratings mr ON mr.id = f.mpa_rating_id
+                LEFT JOIN likes l ON l.film_id = f.id
+                WHERE f.id IN (
+                    SELECT l1.film_id
+                    FROM likes l1
+                    WHERE l1.user_id = ?
+                    INTERSECT
+                    SELECT l2.film_id
+                    FROM likes l2
+                    WHERE l2.user_id = ?
+                )
+                GROUP BY f.id, f.name, f.description, f.release_date, f.duration, mr.id, mr.name
+                ORDER BY likes_cnt DESC, f.id
+                """;
+
+        List<Film> films = jdbcTemplate.query(sql, (rs, rn) -> mapRowToFilm(rs), userId, friendId);
+        loadGenresBulk(films);
         return films;
     }
 
