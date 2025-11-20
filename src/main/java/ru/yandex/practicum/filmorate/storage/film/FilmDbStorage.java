@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.Genre;
 import ru.yandex.practicum.filmorate.model.film.MpaRating;
+import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -34,10 +35,12 @@ public class FilmDbStorage implements FilmStorage {
               LEFT JOIN mpa_ratings mr ON mr.id = f.mpa_rating_id
             """;
     private final JdbcTemplate jdbcTemplate;
+    private final DirectorStorage directorStorage;
 
     @Autowired
-    public FilmDbStorage(JdbcTemplate jdbcTemplate) {
+    public FilmDbStorage(JdbcTemplate jdbcTemplate, DirectorStorage directorStorage) {
         this.jdbcTemplate = jdbcTemplate;
+        this.directorStorage = directorStorage;
     }
 
     @Override
@@ -62,6 +65,7 @@ public class FilmDbStorage implements FilmStorage {
 
         film.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
         replaceFilmGenres(film.getId(), film.getGenres());
+        directorStorage.updateFilmDirectors(film.getId(), film.getDirectors());
         return findById(film.getId()).orElseThrow();
     }
 
@@ -81,6 +85,7 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         replaceFilmGenres(film.getId(), film.getGenres());
+        directorStorage.updateFilmDirectors(film.getId(), film.getDirectors());
         return findById(film.getId()).orElseThrow();
     }
 
@@ -93,6 +98,7 @@ public class FilmDbStorage implements FilmStorage {
         );
         if (films.isEmpty()) return Optional.empty();
         loadGenresBulk(films);
+        loadDirectorsBulk(films);
         return Optional.of(films.get(0));
     }
 
@@ -103,6 +109,7 @@ public class FilmDbStorage implements FilmStorage {
                 (rs, rn) -> mapRowToFilm(rs)
         );
         loadGenresBulk(films);
+        loadDirectorsBulk(films);
         return films;
     }
 
@@ -220,6 +227,51 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    @Override
+    public Collection<Film> findFilmsByDirectorSortedByYear(int directorId) {
+        String sql = SQL_FILMS_BASE + """
+                WHERE f.id IN (
+                    SELECT film_id FROM film_directors WHERE director_id = ?
+                )
+                ORDER BY f.release_date
+                """;
+
+        List<Film> films = jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> mapRowToFilm(rs),
+                directorId
+        );
+        loadGenresBulk(films);
+        loadDirectorsBulk(films);
+        return films;
+    }
+
+    @Override
+    public Collection<Film> findFilmsByDirectorSortedByLikes(int directorId) {
+        String sql = """
+                SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                       mr.id AS mpa_id, mr.name AS mpa_name,
+                       COUNT(l.user_id) AS likes_cnt
+                FROM films f
+                LEFT JOIN mpa_ratings mr ON mr.id = f.mpa_rating_id
+                LEFT JOIN likes l ON l.film_id = f.id
+                WHERE f.id IN (
+                    SELECT film_id FROM film_directors WHERE director_id = ?
+                )
+                GROUP BY f.id, f.name, f.description, f.release_date, f.duration, mr.id, mr.name
+                ORDER BY likes_cnt DESC, f.id
+                """;
+
+        List<Film> films = jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> mapRowToFilm(rs),
+                directorId
+        );
+        loadGenresBulk(films);
+        loadDirectorsBulk(films);
+        return films;
+    }
+
     public Collection<Film> findCommonFilms(long userId, long friendId) {
         final String sql = """
                 SELECT f.id, f.name, f.description, f.release_date, f.duration,
@@ -266,6 +318,7 @@ public class FilmDbStorage implements FilmStorage {
             );
         }
         film.setGenres(new LinkedHashSet<>());
+        film.setDirectors(new LinkedHashSet<>());
         return film;
     }
 
@@ -293,6 +346,21 @@ public class FilmDbStorage implements FilmStorage {
                     .build();
             byFilm.get(filmId).add(g);
         });
+    }
+
+    private void loadDirectorsBulk(List<Film> films) {
+        if (films.isEmpty()) return;
+
+        List<Long> filmIds = films.stream().map(Film::getId).toList();
+        Map<Long, Set<ru.yandex.practicum.filmorate.model.film.Director>> directorsByFilm = new HashMap<>();
+
+        filmIds.forEach(id ->
+                directorsByFilm.put(id, directorStorage.findDirectorsByFilmId(id))
+        );
+
+        films.forEach(film ->
+                film.setDirectors(directorsByFilm.getOrDefault(film.getId(), new LinkedHashSet<>()))
+        );
     }
 
     private void replaceFilmGenres(long filmId, Set<Genre> input) {

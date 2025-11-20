@@ -13,6 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 import ru.yandex.practicum.filmorate.model.film.Film;
+import ru.yandex.practicum.filmorate.storage.director.DirectorDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.GenreDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.MpaDbStorage;
@@ -30,7 +31,7 @@ import static org.assertj.core.api.CollectionAssert.assertThatCollection;
 @JdbcTest
 @AutoConfigureTestDatabase(replace = Replace.ANY)
 @ActiveProfiles("dbFilms")
-@Import({FilmDbStorage.class, GenreDbStorage.class, MpaDbStorage.class})
+@Import({FilmDbStorage.class, GenreDbStorage.class, MpaDbStorage.class, DirectorDbStorage.class})
 @Sql(scripts = {"/schema.sql", "/testdata-h2.sql"}, executionPhase = ExecutionPhase.BEFORE_TEST_METHOD)
 class FilmLikesDbTest implements FilmorateTestSupport {
 
