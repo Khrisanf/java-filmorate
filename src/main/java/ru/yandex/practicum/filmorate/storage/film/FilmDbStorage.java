@@ -97,6 +97,7 @@ public class FilmDbStorage implements FilmStorage {
         );
         if (films.isEmpty()) return Optional.empty();
         loadGenresBulk(films);
+        loadLikesBulk(films);
         loadDirectorsBulk(films);
         return Optional.of(films.get(0));
     }
@@ -108,6 +109,7 @@ public class FilmDbStorage implements FilmStorage {
                 (rs, rn) -> mapRowToFilm(rs)
         );
         loadGenresBulk(films);
+        loadLikesBulk(films);
         loadDirectorsBulk(films);
         return films;
     }
@@ -159,6 +161,8 @@ public class FilmDbStorage implements FilmStorage {
                 """;
         List<Film> films = jdbcTemplate.query(sql, (rs, rn) -> mapRowToFilm(rs), count);
         loadGenresBulk(films);
+        loadLikesBulk(films);
+        loadDirectorsBulk(films);
         return films;
     }
 
@@ -176,6 +180,8 @@ public class FilmDbStorage implements FilmStorage {
                 """;
         List<Film> films = jdbcTemplate.query(sql, (rs, rn) -> mapRowToFilm(rs), userId);
         loadGenresBulk(films);
+        loadLikesBulk(films);
+        loadDirectorsBulk(films);
         return films;
     }
 
@@ -221,6 +227,8 @@ public class FilmDbStorage implements FilmStorage {
                 params.toArray()
         );
         loadGenresBulk(films);
+        loadLikesBulk(films);
+        loadDirectorsBulk(films);
         return films;
     }
 
@@ -239,6 +247,7 @@ public class FilmDbStorage implements FilmStorage {
                 directorId
         );
         loadGenresBulk(films);
+        loadLikesBulk(films);
         loadDirectorsBulk(films);
         return films;
     }
@@ -265,6 +274,7 @@ public class FilmDbStorage implements FilmStorage {
                 directorId
         );
         loadGenresBulk(films);
+        loadLikesBulk(films);
         loadDirectorsBulk(films);
         return films;
     }
@@ -332,6 +342,28 @@ public class FilmDbStorage implements FilmStorage {
         films.forEach(film ->
                 film.setDirectors(directorsByFilm.getOrDefault(film.getId(), new LinkedHashSet<>()))
         );
+    }
+
+    private void loadLikesBulk(List<Film> films) {
+        if (films.isEmpty()) return;
+
+        List<Long> ids = films.stream().map(Film::getId).toList();
+        String inClause = ids.stream().map(x -> "?").collect(Collectors.joining(","));
+
+        String sql = """
+                SELECT film_id, user_id
+                FROM likes
+                WHERE film_id IN (%s)
+                """.formatted(inClause);
+
+        Map<Long, Set<Long>> likesByFilm = films.stream()
+                .collect(Collectors.toMap(Film::getId, Film::getLikes));
+
+        jdbcTemplate.query(sql, ids.toArray(), rs -> {
+            long filmId = rs.getLong("film_id");
+            long userId = rs.getLong("user_id");
+            likesByFilm.get(filmId).add(userId);
+        });
     }
 
     private void replaceFilmGenres(long filmId, Set<Genre> input) {

@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.SearchBy;
 import ru.yandex.practicum.filmorate.model.film.Director;
@@ -9,6 +10,7 @@ import ru.yandex.practicum.filmorate.search.SubstringMatcher;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class FilmSearchService {
 
@@ -37,7 +39,13 @@ public class FilmSearchService {
         }
 
         return result.stream()
-                .sorted(Comparator.comparingInt(this::getPopularity).reversed())
+                .sorted(
+                        Comparator.comparingInt(this::getPopularity).reversed()
+                                .thenComparing(Film::getReleaseDate, Comparator.nullsLast(Comparator.reverseOrder()))
+                                .thenComparing(Film::getId)
+                )
+                .peek(f -> log.info("Search result film id={}, name={}, likes={}, date={}",
+                        f.getId(), f.getName(), f.getLikes().size(), f.getReleaseDate()))
                 .collect(Collectors.toList());
     }
 
