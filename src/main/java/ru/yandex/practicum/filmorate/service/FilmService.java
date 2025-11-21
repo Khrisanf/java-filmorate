@@ -225,6 +225,9 @@ public class FilmService {
                 continue;
             }
             Collection<Film> otherUserLikes = filmStorage.findLikesByUserId(user.getId());
+            if (otherUserLikes.isEmpty()) {
+                continue;
+            }
             filmsToCheck = refillFilmsToCheck(filmsToCheck, userLikes, otherUserLikes);
             double distanceToOtherUser = calculateDistanceToOtherUser(filmsToCheck, userLikes, otherUserLikes);
             neighborDistance.put(distanceToOtherUser, user);
