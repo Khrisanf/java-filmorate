@@ -239,6 +239,14 @@ public class FilmService {
     private List<Film> findNotSeenFilms(long userId, long otherUserId) {
         Collection<Film> userLikes = filmStorage.findLikesByUserId(userId);
         Collection<Film> otherUserLikes = filmStorage.findLikesByUserId(otherUserId);
+        log.error("userId {} liked {} films, otherUserId {} liked {} films",
+                userId,
+                filmStorage.findLikesByUserId(userId).stream().map(Film::getId).toList(),
+                otherUserId,
+                filmStorage.findLikesByUserId(otherUserId).stream().map(Film::getId).toList());
+        log.error("result is {}", otherUserLikes.stream()
+                .filter(f -> !userLikes.contains(f)).map(Film::getId).toList());
+
         return otherUserLikes.stream().filter(f -> !userLikes.contains(f)).toList();
     }
 
