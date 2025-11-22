@@ -48,13 +48,16 @@ public class InMemoryDirectorStorage implements DirectorStorage {
 
     @Override
     public void deleteById(int id) {
+        // Сначала удаляем связи с фильмами
+        filmDirectors.entrySet().forEach(entry ->
+                entry.getValue().removeIf(d -> d.getId().equals(id))
+        );
+
+        // Затем удаляем самого режиссера
         if (directors.remove(id) == null) {
             throw new NotFoundException("Director with id " + id + " not found");
         }
-        filmDirectors.values().forEach(directorSet ->
-                directorSet.removeIf(d -> d.getId().equals(id)));
     }
-
     @Override
     public Set<Integer> findMissingIds(Set<Integer> ids) {
         if (ids == null || ids.isEmpty()) return Set.of();
