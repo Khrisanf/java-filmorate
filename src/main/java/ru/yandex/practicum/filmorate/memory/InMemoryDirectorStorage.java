@@ -58,6 +58,7 @@ public class InMemoryDirectorStorage implements DirectorStorage {
             throw new NotFoundException("Director with id " + id + " not found");
         }
     }
+    
     @Override
     public Set<Integer> findMissingIds(Set<Integer> ids) {
         if (ids == null || ids.isEmpty()) return Set.of();
