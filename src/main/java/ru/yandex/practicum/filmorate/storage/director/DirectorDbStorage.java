@@ -67,6 +67,10 @@ public class DirectorDbStorage implements DirectorStorage {
 
     @Override
     public void deleteById(int id) {
+        // Сначала удаляем связи с фильмами
+        jdbcTemplate.update("DELETE FROM film_directors WHERE director_id = ?", id);
+
+        // Затем удаляем самого режиссера
         String sql = "DELETE FROM directors WHERE id = ?";
         int rows = jdbcTemplate.update(sql, id);
 
@@ -74,7 +78,6 @@ public class DirectorDbStorage implements DirectorStorage {
             throw new NotFoundException("Director with id " + id + " not found");
         }
     }
-
     @Override
     public Set<Integer> findMissingIds(Set<Integer> ids) {
         if (ids == null || ids.isEmpty()) return Set.of();
