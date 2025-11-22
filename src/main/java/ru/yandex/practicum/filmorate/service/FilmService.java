@@ -144,8 +144,7 @@ public class FilmService {
         } else {
             throw new IllegalArgumentException("Invalid sort parameter. Use 'year' or 'likes'");
         }
-        
-        // Фильтруем только существующих режиссеров
+
         films.forEach(film -> film.setDirectors(filterExistingDirectors(film.getDirectors())));
         return films;
     }
@@ -240,7 +239,7 @@ public class FilmService {
         if (directors == null || directors.isEmpty()) {
             return new LinkedHashSet<>();
         }
-        
+
         return directors.stream()
                 .filter(Objects::nonNull)
                 .filter(d -> d.getId() != null)
