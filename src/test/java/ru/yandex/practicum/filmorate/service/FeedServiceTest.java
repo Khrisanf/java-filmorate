@@ -4,16 +4,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.event.EventOperation;
 import ru.yandex.practicum.filmorate.model.event.EventType;
 import ru.yandex.practicum.filmorate.model.event.FeedEvent;
 import ru.yandex.practicum.filmorate.model.event.FeedEventResponse;
+import ru.yandex.practicum.filmorate.model.film.Film;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
 import ru.yandex.practicum.filmorate.storage.user.FeedEventStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -24,12 +32,23 @@ class FeedServiceTest {
     @Mock
     private FeedEventStorage feedEventStorage;
 
+    @Mock
+    private ReviewStorage reviewStorage;
+
+    @Mock
+    private FilmStorage filmStorage;
+
+    @Mock
+    private UserStorage userStorage;
+
+    @Spy
     @InjectMocks
     private FeedService feedService;
 
     @Test
     void getUserFeed_shouldReturnEventsWhenUserExists() {
         Long userId = 1L;
+        when(userStorage.findById(userId)).thenReturn(Optional.of(mock(User.class)));
         List<FeedEvent> mockEvents = Arrays.asList(
                 createFeedEvent(1L, userId, 1L, EventType.LIKE, EventOperation.ADD, 10L, 1000L),
                 createFeedEvent(2L, userId, 1L, EventType.FRIEND, EventOperation.ADD, 20L, 2000L)
@@ -55,6 +74,7 @@ class FeedServiceTest {
     @Test
     void getUserFeed_shouldReturnEmptyListWhenNoEvents() {
         Long userId = 1L;
+        when(userStorage.findById(userId)).thenReturn(Optional.of(mock(User.class)));
         when(feedEventStorage.findByUserIdOrderByTimestampAsc(userId)).thenReturn(Collections.emptyList());
 
         List<FeedEventResponse> result = feedService.getUserFeed(userId);
@@ -73,6 +93,10 @@ class FeedServiceTest {
         Long entityId = 10L;
         String entityType = "FILM";
 
+        when(userStorage.findById(targetUserId)).thenReturn(Optional.of(mock(User.class)));
+        when(userStorage.findById(actorId)).thenReturn(Optional.of(mock(User.class)));
+        when(filmStorage.findById(entityId)).thenReturn(Optional.of(mock(Film.class)));
+
         feedService.addEvent(targetUserId, actorId, eventType, operation, entityId, entityType);
 
         verify(feedEventStorage).save(argThat(event ->
@@ -90,6 +114,12 @@ class FeedServiceTest {
     void addEvent_shouldHandleDifferentEventTypes() {
         Long targetUserId = 1L;
         Long actorId = 1L;
+        when(userStorage.findById(targetUserId)).thenReturn(Optional.of(mock(User.class)));
+        when(userStorage.findById(actorId)).thenReturn(Optional.of(mock(User.class)));
+
+        when(userStorage.findById(20L)).thenReturn(Optional.of(mock(User.class)));
+        when(reviewStorage.findById(30L)).thenReturn(Optional.of(mock(Review.class)));
+        when(filmStorage.findById(40L)).thenReturn(Optional.of(mock(Film.class)));
 
         feedService.addEvent(targetUserId, actorId, EventType.FRIEND, EventOperation.ADD, 20L, "USER");
         feedService.addEvent(targetUserId, actorId, EventType.REVIEW, EventOperation.UPDATE, 30L, "REVIEW");
@@ -101,6 +131,7 @@ class FeedServiceTest {
     @Test
     void getUserFeed_shouldReturnEventsInCorrectOrder() {
         Long userId = 1L;
+        when(userStorage.findById(userId)).thenReturn(Optional.of(mock(User.class)));
         List<FeedEvent> mockEvents = Arrays.asList(
                 createFeedEvent(1L, userId, 1L, EventType.LIKE, EventOperation.ADD, 10L, 1000L),    // самое старое
                 createFeedEvent(2L, userId, 1L, EventType.FRIEND, EventOperation.ADD, 20L, 2000L),  // среднее
@@ -120,6 +151,10 @@ class FeedServiceTest {
     void addEvent_shouldSetCurrentTimestamp() {
         Long targetUserId = 1L;
         Long actorId = 1L;
+
+        when(userStorage.findById(targetUserId)).thenReturn(Optional.of(mock(User.class)));
+        when(userStorage.findById(actorId)).thenReturn(Optional.of(mock(User.class)));
+        when(filmStorage.findById(10L)).thenReturn(Optional.of(mock(Film.class)));
         long beforeCall = System.currentTimeMillis();
 
         feedService.addEvent(targetUserId, actorId, EventType.LIKE, EventOperation.ADD, 10L, "FILM");

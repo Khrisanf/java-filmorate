@@ -72,23 +72,21 @@ public class UserService {
         if (userId == friendId) {
             throw new IllegalArgumentException("Cannot add yourself as a friend");
         }
-        feedService.addEvent(userId, userId, EventType.FRIEND, EventOperation.ADD, friendId, "USER");
-
-        feedService.addEvent(friendId, userId, EventType.FRIEND, EventOperation.ADD, userId, "USER");
         log.info("===Adding friends to friends list: id={}", userId);
         ensureUserExists(userId);
         ensureUserExists(friendId);
+        feedService.addEvent(userId, userId, EventType.FRIEND, EventOperation.ADD, friendId, "USER");
+
         return userStorage.addFriend(userId, friendId);
     }
 
     @Transactional
     public User removeFriends(long userId, long friendId) {
         log.info("===Removing friends from friends list: id={}", userId);
-        feedService.addEvent(userId, userId, EventType.FRIEND, EventOperation.REMOVE, friendId, "USER");
 
-        feedService.addEvent(friendId, userId, EventType.FRIEND, EventOperation.REMOVE, userId, "USER");
         ensureUserExists(userId);
         ensureUserExists(friendId);
+        feedService.addEvent(userId, userId, EventType.FRIEND, EventOperation.REMOVE, friendId, "USER");
         return userStorage.removeFriend(userId, friendId);
     }
 

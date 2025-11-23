@@ -5,9 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
+import ru.yandex.practicum.filmorate.exceptions.ValidatorException;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.event.EventOperation;
 import ru.yandex.practicum.filmorate.model.event.EventType;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -21,20 +23,32 @@ public class ReviewService {
     private final ReviewStorage reviewStorage;
     private final UserStorage userStorage;
     private final FeedService feedService;
+    private final FilmStorage filmStorage;
 
     @Transactional
     public Review createReview(Review review) {
-        log.info("Создание отзыва пользователем {} для фильма {}", review.getUserId(), review.getFilmId());
         validateId(review.getUserId(), "userId");
         validateId(review.getFilmId(), "filmId");
+
+        userStorage.findById(review.getUserId()).orElseThrow(() ->
+                new NotFoundException("Пользователя с id " + review.getUserId() + " нет"));
+        filmStorage.findById(review.getFilmId()).orElseThrow(() ->
+                new NotFoundException("Фильма с id " + review.getFilmId() + " нет"));
+
+        if (reviewStorage.existsByUserIdAndFilmId(review.getUserId(), review.getFilmId())) {
+            throw new ValidatorException("Отзыв уже существует");
+        }
         Review created = reviewStorage.save(review);
-        feedService.addEvent(review.getUserId(),
-                review.getUserId(),
+
+        feedService.addEvent(created.getUserId(),
+                created.getUserId(),
                 EventType.REVIEW,
                 EventOperation.ADD,
-                review.getReviewId(),
+                created.getReviewId(),
                 "REVIEW");
-        log.info("Отзыв создан с id {}", created.getReviewId());
+
+        log.info("Отзывыз с id {} создан.", created.getReviewId());
+
         return created;
     }
 
@@ -45,7 +59,7 @@ public class ReviewService {
                 .orElseThrow(() -> new NotFoundException("Отзыва с id " + review.getReviewId() + " нет"));
         existingReview.setContent(review.getContent());
         existingReview.setIsPositive(review.getIsPositive());
-        Review updated = reviewStorage.save(existingReview);
+        Review updated = reviewStorage.update(existingReview);
 
         feedService.addEvent(updated.getUserId(),
                 updated.getUserId(),
@@ -78,14 +92,13 @@ public class ReviewService {
         log.info("Удаление отзыва с id {}", reviewId);
         Review review = reviewStorage.findById(reviewId)
                 .orElseThrow(() -> new NotFoundException("Отзыв с id " + reviewId + " не найден"));
-        reviewStorage.delete(reviewId);
-
         feedService.addEvent(review.getUserId(),
                 review.getUserId(),
                 EventType.REVIEW,
                 EventOperation.REMOVE,
                 reviewId,
                 "REVIEW");
+        reviewStorage.delete(reviewId);
         log.info("Отзыв с id {} удален", reviewId);
     }
 

@@ -10,6 +10,8 @@ public interface ReviewStorage {
 
     Review save(Review review);
 
+    Review update(Review review);
+
     void delete(Long reviewId);
 
     List<Review> findByFilmId(Long filmId, int count);
@@ -21,4 +23,6 @@ public interface ReviewStorage {
     void addDisLike(Long reviewId, Long userId);
 
     void removeReaction(Long reviewId, Long userId);
+
+    boolean existsByUserIdAndFilmId(Long userId, Long filmId);
 }

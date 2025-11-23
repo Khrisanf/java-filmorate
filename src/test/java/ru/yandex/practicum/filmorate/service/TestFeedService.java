@@ -5,7 +5,7 @@ import ru.yandex.practicum.filmorate.model.event.EventType;
 
 public class TestFeedService extends FeedService {
     public TestFeedService() {
-        super(null);
+        super(null, null, null, null);
     }
 
     @Override

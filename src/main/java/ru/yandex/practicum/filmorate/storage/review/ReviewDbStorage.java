@@ -22,25 +22,26 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public Review save(Review review) {
-        if (review.getReviewId() == null || review.getReviewId() == 0) {
-            String sql = "INSERT INTO review (user_id, film_id, content, is_positive, useful) VALUES (?, ?, ?, ?, ?)";
-            KeyHolder keyHolder = new GeneratedKeyHolder();
-            jdbcTemplate.update(connection -> {
-                PreparedStatement ps = connection.prepareStatement(sql, new String[]{"review_id"});
-                ps.setLong(1, review.getUserId());
-                ps.setLong(2, review.getFilmId());
-                ps.setString(3, review.getContent());
-                ps.setBoolean(4, review.getIsPositive());
-                ps.setInt(5, review.getUseful());
-                return ps;
-            }, keyHolder);
-            review.setReviewId(keyHolder.getKey().longValue());
-            return review;
-        } else {
-            String sql = "UPDATE review SET content = ?, is_positive = ?, useful = ? WHERE review_id = ?";
-            jdbcTemplate.update(sql, review.getContent(), review.getIsPositive(), review.getUseful(), review.getReviewId());
-            return review;
-        }
+        String sql = "INSERT INTO review (user_id, film_id, content, is_positive, useful) VALUES (?, ?, ?, ?, ?)";
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"review_id"});
+            ps.setLong(1, review.getUserId());
+            ps.setLong(2, review.getFilmId());
+            ps.setString(3, review.getContent());
+            ps.setBoolean(4, review.getIsPositive());
+            ps.setInt(5, review.getUseful());
+            return ps;
+        }, keyHolder);
+        review.setReviewId(keyHolder.getKey().longValue());
+        return review;
+    }
+
+    @Override
+    public Review update(Review review) {
+        String sql = "UPDATE review SET content = ?, is_positive = ?, useful = ? WHERE review_id = ?";
+        jdbcTemplate.update(sql, review.getContent(), review.getIsPositive(), review.getUseful(), review.getReviewId());
+        return review;
     }
 
     @Override
@@ -111,6 +112,12 @@ public class ReviewDbStorage implements ReviewStorage {
     private void updateUseful(Long reviewId, int delta) {
         String sql = "UPDATE review SET useful = useful + ? WHERE review_id = ?";
         jdbcTemplate.update(sql, delta, reviewId);
+    }
+
+    public boolean existsByUserIdAndFilmId(Long userId, Long filmId) {
+        String sql = "SELECT COUNT(*) FROM review WHERE user_id = ? AND film_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId, filmId);
+        return count != null && count > 0;
     }
 
     private void recalculateUseful(Long reviewId) {
