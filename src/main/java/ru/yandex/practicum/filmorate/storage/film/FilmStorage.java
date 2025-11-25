@@ -29,4 +29,6 @@ public interface FilmStorage {
     Collection<Film> findFilmsByDirectorSortedByYear(int directorId);
 
     Collection<Film> findFilmsByDirectorSortedByLikes(int directorId);
+
+    Collection<Film> findCommonFilms(long userId, long friendId);
 }

@@ -163,6 +163,10 @@ public class FilmService {
         }
     }
 
+    public Collection<Film> getCommonFilms(Long userId, Long friendsId) {
+        return filmStorage.findCommonFilms(userId, friendsId);
+    }
+
     private Film ensureFilmExists(long id) {
         return filmStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Film not found: id=" + id));

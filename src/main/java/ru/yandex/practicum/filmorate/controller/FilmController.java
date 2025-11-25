@@ -40,6 +40,15 @@ public class FilmController {
         return ResponseEntity.ok(films);
     }
 
+    @GetMapping("/common")
+    public ResponseEntity<Collection<Film>> getCommonFilms(
+            @RequestParam Long userId,
+            @RequestParam Long friendId) {
+
+        Collection<Film> commonFilms = filmService.getCommonFilms(userId, friendId);
+        return ResponseEntity.ok(commonFilms);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Film> deleteById(@PathVariable long id) {
         filmService.deleteById(id);

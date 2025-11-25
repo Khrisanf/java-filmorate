@@ -27,17 +27,13 @@ public class ReviewService {
 
     @Transactional
     public Review createReview(Review review) {
-        validateId(review.getUserId(), "userId");
-        validateId(review.getFilmId(), "filmId");
-
-        userStorage.findById(review.getUserId()).orElseThrow(() ->
-                new NotFoundException("Пользователя с id " + review.getUserId() + " нет"));
-        filmStorage.findById(review.getFilmId()).orElseThrow(() ->
-                new NotFoundException("Фильма с id " + review.getFilmId() + " нет"));
+        getUserById(review.getUserId());
+        getFilmById(review.getFilmId());
 
         if (reviewStorage.existsByUserIdAndFilmId(review.getUserId(), review.getFilmId())) {
             throw new ValidatorException("Отзыв уже существует");
         }
+
         Review created = reviewStorage.save(review);
 
         feedService.addEvent(created.getUserId(),
@@ -55,8 +51,7 @@ public class ReviewService {
     @Transactional
     public Review updateReview(Review review) {
         log.info("Обновление отзыва с id {}", review.getReviewId());
-        Review existingReview = reviewStorage.findById(review.getReviewId())
-                .orElseThrow(() -> new NotFoundException("Отзыва с id " + review.getReviewId() + " нет"));
+        Review existingReview = getReview(review.getReviewId());
         existingReview.setContent(review.getContent());
         existingReview.setIsPositive(review.getIsPositive());
         Review updated = reviewStorage.update(existingReview);
@@ -69,6 +64,58 @@ public class ReviewService {
                 "REVIEW");
         log.info("Отзыв с id {} обновлен", updated.getReviewId());
         return updated;
+    }
+
+
+    @Transactional
+    public void deleteReview(Long reviewId) {
+        log.info("Удаление отзыва с id {}", reviewId);
+        Review review = getReview(reviewId);
+        feedService.addEvent(review.getUserId(),
+                review.getUserId(),
+                EventType.REVIEW,
+                EventOperation.REMOVE,
+                reviewId,
+                "REVIEW");
+        reviewStorage.delete(reviewId);
+        log.info("Отзыв с id {} удален", reviewId);
+    }
+
+    @Transactional
+    public void addLike(Long reviewId, Long userId) {
+        log.info("Добавление лайка отзыву {} пользователем {}", reviewId, userId);
+        getReview(reviewId);
+        getUserById(userId);
+        reviewStorage.addLike(reviewId, userId);
+        log.info("Лайк добавлен отзыву {} пользователем {}", reviewId, userId);
+    }
+
+    @Transactional
+    public void addDisLike(Long reviewId, Long userId) {
+        log.info("Добавление дизлайка отзыву {} пользователем {}", reviewId, userId);
+        getReview(reviewId);
+        getUserById(userId);
+        reviewStorage.addDisLike(reviewId, userId);
+        log.info("Дизлайк добавлен отзыву {} пользователем {}", reviewId, userId);
+    }
+
+    @Transactional
+    public void removeReaction(Long reviewId, Long userId) {
+        log.info("Удаление реакции отзыву {} пользователем {}", reviewId, userId);
+        getReview(reviewId);
+        getUserById(userId);
+        reviewStorage.removeReaction(reviewId, userId);
+        log.info("Реакция удалена отзыву {} пользователем {}", reviewId, userId);
+    }
+
+    private void getUserById(long userId) {
+        userStorage.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователя с id " + userId + " нет"));
+    }
+
+    private void getFilmById(long filmId) {
+        filmStorage.findById(filmId)
+                .orElseThrow(() -> new NotFoundException("Фильма с id " + filmId + " нет"));
     }
 
     public Review getReview(Long reviewId) {
@@ -85,60 +132,5 @@ public class ReviewService {
     public List<Review> getAllReviews(int count) {
         log.info("Получение {} последних отзывов", count);
         return reviewStorage.findAll(count);
-    }
-
-    @Transactional
-    public void deleteReview(Long reviewId) {
-        log.info("Удаление отзыва с id {}", reviewId);
-        Review review = reviewStorage.findById(reviewId)
-                .orElseThrow(() -> new NotFoundException("Отзыв с id " + reviewId + " не найден"));
-        feedService.addEvent(review.getUserId(),
-                review.getUserId(),
-                EventType.REVIEW,
-                EventOperation.REMOVE,
-                reviewId,
-                "REVIEW");
-        reviewStorage.delete(reviewId);
-        log.info("Отзыв с id {} удален", reviewId);
-    }
-
-    @Transactional
-    public void addLike(Long reviewId, Long userId) {
-        log.info("Добавление лайка отзыву {} пользователем {}", reviewId, userId);
-        validateReviewAndUser(reviewId, userId);
-        reviewStorage.addLike(reviewId, userId);
-        log.info("Лайк добавлен отзыву {} пользователем {}", reviewId, userId);
-    }
-
-    @Transactional
-    public void addDisLike(Long reviewId, Long userId) {
-        log.info("Добавление дизлайка отзыву {} пользователем {}", reviewId, userId);
-        validateReviewAndUser(reviewId, userId);
-        reviewStorage.addDisLike(reviewId, userId);
-        log.info("Дизлайк добавлен отзыву {} пользователем {}", reviewId, userId);
-    }
-
-    @Transactional
-    public void removeReaction(Long reviewId, Long userId) {
-        log.info("Удаление реакции отзыву {} пользователем {}", reviewId, userId);
-        validateReviewAndUser(reviewId, userId);
-        reviewStorage.removeReaction(reviewId, userId);
-        log.info("Реакция удалена отзыву {} пользователем {}", reviewId, userId);
-    }
-
-    private void validateReviewAndUser(Long reviewId, Long userId) {
-        reviewStorage.findById(reviewId)
-                .orElseThrow(() -> new NotFoundException("Отзыв с id " + reviewId + " не найден"));
-        userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
-    }
-
-    private void validateId(Long id, String fieldName) {
-        if (id == null) {
-            throw new IllegalArgumentException(fieldName + " обязателен");
-        }
-        if (id <= 0) {
-            throw new NotFoundException(fieldName + " должен быть положительным числом");
-        }
     }
 }

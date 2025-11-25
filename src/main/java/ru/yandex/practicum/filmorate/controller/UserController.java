@@ -6,12 +6,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.event.FeedEventResponse;
 import ru.yandex.practicum.filmorate.model.film.Film;
+import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -21,7 +24,7 @@ public class UserController {
 
     private final UserService userService;
     private final FilmService filmService;
-
+    private final FeedService feedService;
 
     @PostMapping
     public ResponseEntity<User> create(@RequestBody @Valid User user) {
@@ -44,6 +47,12 @@ public class UserController {
     public ResponseEntity<Collection<User>> getAll() {
         Collection<User> users = userService.findAll();
         return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/{id}/feed")
+    public ResponseEntity<List<FeedEventResponse>> getUserFeed(@PathVariable("id") Long userId) {
+        List<FeedEventResponse> feed = feedService.getUserFeed(userId);
+        return ResponseEntity.ok(feed);
     }
 
     @DeleteMapping("/{id}")

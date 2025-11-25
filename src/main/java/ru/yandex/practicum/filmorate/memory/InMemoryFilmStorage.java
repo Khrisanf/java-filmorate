@@ -176,6 +176,11 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Collection<Film> findCommonFilms(long userId, long friendId) {
+        return List.of();
+    }
+
     private Film getOrThrow(long id) {
         Film film = films.get(id);
         if (film == null) {
