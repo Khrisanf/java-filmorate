@@ -27,7 +27,7 @@ class UserServiceFriendsTest {
     @BeforeEach
     void setUp() {
         userStorage = new InMemoryUserStorage();
-        userService = new UserService(userStorage);
+        userService = new UserService(userStorage, new TestFeedService());
 
         u1Id = createUser("alice@example.com", "alice", "Alice", LocalDate.of(1990, 1, 1)).getId();
         u2Id = createUser("bob@example.com", "bob", "Bob", LocalDate.of(1991, 2, 2)).getId();
@@ -75,7 +75,6 @@ class UserServiceFriendsTest {
 
     @Test
     void findMutualFriends_shouldReturnIntersection() {
-        // u1 дружит с u2 и u3; u2 дружит только с u3 → общий друг = u3
         userService.addFriends(u1Id, u2Id);
         userService.addFriends(u1Id, u3Id);
         userService.addFriends(u2Id, u3Id);

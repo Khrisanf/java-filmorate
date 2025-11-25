@@ -23,9 +23,8 @@ public class FilmController {
         return ResponseEntity.created(location).body(created);
     }
 
-
     @PutMapping
-    public ResponseEntity<Film> update(@RequestBody @Valid Film film) {
+    public ResponseEntity<Film> update(@RequestBody Film film) {
         Film updatedFilm = filmService.update(film);
         return ResponseEntity.ok(updatedFilm);
     }
@@ -58,9 +57,20 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public ResponseEntity<Collection<Film>> getPopularFilms(@RequestParam(defaultValue = "10") int count) {
-        Collection<Film> films = filmService.getPopular(count);
+    public ResponseEntity<Collection<Film>> getPopularFilms(
+            @RequestParam(defaultValue = "10") int count,
+            @RequestParam(required = false) Integer genreId,
+            @RequestParam(required = false) Integer year
+    ) {
+        Collection<Film> films = filmService.getPopular(count, genreId, year);
         return ResponseEntity.ok(films);
     }
 
+    @GetMapping("/director/{directorId}")
+    public ResponseEntity<Collection<Film>> getFilmsByDirector(
+            @PathVariable int directorId,
+            @RequestParam String sortBy) {
+        Collection<Film> films = filmService.getFilmsByDirector(directorId, sortBy);
+        return ResponseEntity.ok(films);
+    }
 }
