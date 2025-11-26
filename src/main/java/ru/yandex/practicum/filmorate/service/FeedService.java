@@ -22,7 +22,7 @@ public class FeedService {
 
     public List<FeedEventResponse> getUserFeed(Long userId) {
         List<FeedEvent> events = feedEventStorage.findByUserIdOrderByTimestampAsc(userId);
-        userStorage.findById(userId).orElseThrow(() -> new NotFoundException("Пользователя с id " + userId + " нет"));
+        userStorage.findById(userId).orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
 
         return events.stream()
                 .map(this::convertToDto)

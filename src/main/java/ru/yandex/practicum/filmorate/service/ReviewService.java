@@ -31,7 +31,7 @@ public class ReviewService {
         getFilmById(review.getFilmId());
 
         if (reviewStorage.existsByUserIdAndFilmId(review.getUserId(), review.getFilmId())) {
-            throw new ValidatorException("Отзыв уже существует");
+            throw new ValidatorException("Review already exists");
         }
 
         Review created = reviewStorage.save(review);
@@ -43,14 +43,14 @@ public class ReviewService {
                 created.getReviewId(),
                 "REVIEW");
 
-        log.info("Отзывыз с id {} создан.", created.getReviewId());
+        log.info("Review with id {} created.", created.getReviewId());
 
         return created;
     }
 
     @Transactional
     public Review updateReview(Review review) {
-        log.info("Обновление отзыва с id {}", review.getReviewId());
+        log.info("Updating review with id {}", review.getReviewId());
         Review existingReview = getReview(review.getReviewId());
         existingReview.setContent(review.getContent());
         existingReview.setIsPositive(review.getIsPositive());
@@ -62,14 +62,14 @@ public class ReviewService {
                 EventOperation.UPDATE,
                 updated.getReviewId(),
                 "REVIEW");
-        log.info("Отзыв с id {} обновлен", updated.getReviewId());
+        log.info("Review with id {} updated", updated.getReviewId());
         return updated;
     }
 
 
     @Transactional
     public void deleteReview(Long reviewId) {
-        log.info("Удаление отзыва с id {}", reviewId);
+        log.info("Deleting review with id {}", reviewId);
         Review review = getReview(reviewId);
         feedService.addEvent(review.getUserId(),
                 review.getUserId(),
@@ -78,59 +78,59 @@ public class ReviewService {
                 reviewId,
                 "REVIEW");
         reviewStorage.delete(reviewId);
-        log.info("Отзыв с id {} удален", reviewId);
+        log.info("Review with id {} deleted", reviewId);
     }
 
     @Transactional
     public void addLike(Long reviewId, Long userId) {
-        log.info("Добавление лайка отзыву {} пользователем {}", reviewId, userId);
+        log.info("Adding like to review {} by user {}", reviewId, userId);
         getReview(reviewId);
         getUserById(userId);
         reviewStorage.addLike(reviewId, userId);
-        log.info("Лайк добавлен отзыву {} пользователем {}", reviewId, userId);
+        log.info("Like added to review {} by user {}", reviewId, userId);
     }
 
     @Transactional
     public void addDisLike(Long reviewId, Long userId) {
-        log.info("Добавление дизлайка отзыву {} пользователем {}", reviewId, userId);
+        log.info("Adding dislike to review {} by user {}", reviewId, userId);
         getReview(reviewId);
         getUserById(userId);
         reviewStorage.addDisLike(reviewId, userId);
-        log.info("Дизлайк добавлен отзыву {} пользователем {}", reviewId, userId);
+        log.info("Dislike added to review {} by user {}", reviewId, userId);
     }
 
     @Transactional
     public void removeReaction(Long reviewId, Long userId) {
-        log.info("Удаление реакции отзыву {} пользователем {}", reviewId, userId);
+        log.info("Removing reaction from review {} by user {}", reviewId, userId);
         getReview(reviewId);
         getUserById(userId);
         reviewStorage.removeReaction(reviewId, userId);
-        log.info("Реакция удалена отзыву {} пользователем {}", reviewId, userId);
+        log.info("Reaction removed from review {} by user {}", reviewId, userId);
     }
 
     private void getUserById(long userId) {
         userStorage.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователя с id " + userId + " нет"));
+                .orElseThrow(() -> new NotFoundException("User with id " + userId + " not found"));
     }
 
     private void getFilmById(long filmId) {
         filmStorage.findById(filmId)
-                .orElseThrow(() -> new NotFoundException("Фильма с id " + filmId + " нет"));
+                .orElseThrow(() -> new NotFoundException("Film with id " + filmId + " not found"));
     }
 
     public Review getReview(Long reviewId) {
-        log.info("Получение отзыва с id {}", reviewId);
+        log.info("Getting review with id {}", reviewId);
         return reviewStorage.findById(reviewId)
-                .orElseThrow(() -> new NotFoundException("Отзыв не найден"));
+                .orElseThrow(() -> new NotFoundException("Review not found"));
     }
 
     public List<Review> getReviewsByFilmId(Long filmId, int count) {
-        log.info("Получение {} отзывов для фильма с id {}", count, filmId);
+        log.info("Getting {} reviews for film with id {}", count, filmId);
         return reviewStorage.findByFilmId(filmId, count);
     }
 
     public List<Review> getAllReviews(int count) {
-        log.info("Получение {} последних отзывов", count);
+        log.info("Getting {} latest reviews", count);
         return reviewStorage.findAll(count);
     }
 }

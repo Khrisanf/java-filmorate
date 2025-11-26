@@ -6,9 +6,9 @@ import lombok.Data;
 @Data
 public class Review {
     private Long reviewId;
-    @NotNull(message = "userId не может быть пустым")
+    @NotNull(message = "userId cannot be empty")
     private Long userId;
-    @NotNull(message = "filmId не может быть пустым")
+    @NotNull(message = "filmID cannot be empty")
     private Long filmId;
     private String content;
     private Boolean isPositive;
