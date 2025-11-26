@@ -32,7 +32,7 @@ class DirectorControllerTest {
     private DirectorService directorService;
 
     @Test
-    void shouldCreateDirector() throws Exception {
+    void shouldCreateDirectorSuccessfullyWhenPostNewDirector() throws Exception {
         Director director = Director.builder().id(1).name("Test Director").build();
         when(directorService.create(any())).thenReturn(director);
 
@@ -45,7 +45,7 @@ class DirectorControllerTest {
     }
 
     @Test
-    void shouldGetAllDirectors() throws Exception {
+    void shouldGetAllDirectorsWhenFindAllInvoked() throws Exception {
         Director director1 = Director.builder().id(1).name("Director 1").build();
         Director director2 = Director.builder().id(2).name("Director 2").build();
         when(directorService.findAll()).thenReturn(List.of(director1, director2));

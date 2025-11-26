@@ -19,8 +19,7 @@ public class DirectorService {
     }
 
     public Director findById(int id) {
-        return directorStorage.findById(id)
-                .orElseThrow(() -> new NotFoundException("Director with id " + id + " not found"));
+        return getDirectorOrThrow(id);
     }
 
     public Director create(Director director) {
@@ -28,12 +27,12 @@ public class DirectorService {
     }
 
     public Director update(Director director) {
-        ensureDirectorExists(director.getId());
+        getDirectorOrThrow(director.getId());
         return directorStorage.update(director);
     }
 
     public void deleteById(int id) {
-        ensureDirectorExists(id);
+        getDirectorOrThrow(id);
         directorStorage.deleteById(id);
     }
 
@@ -41,8 +40,8 @@ public class DirectorService {
         return directorStorage.findMissingIds(ids);
     }
 
-    private void ensureDirectorExists(int id) {
-        directorStorage.findById(id)
+    private Director getDirectorOrThrow(int id) {
+        return directorStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Director with id " + id + " not found"));
     }
 }
