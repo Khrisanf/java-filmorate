@@ -1,10 +1,3 @@
-DELETE FROM likes;
-DELETE FROM film_directors;
-DELETE FROM film_genres;
-DELETE FROM films;
-DELETE FROM users;
-DELETE FROM mpa_ratings;
-
 MERGE INTO MPA_RATINGS (id, name) KEY (id) VALUES (1, 'G');
 
 INSERT INTO USERS (id, email, login, name, birthday)
@@ -23,8 +16,13 @@ VALUES (1, 'Крадущийся тигр', 'test', DATE '2000-01-01', 120, 1),
        (2, 'Крадущийся дракон', 'test', DATE '2000-01-02', 110, 1),
        (3, 'Крадущийся в ночи', 'test', DATE '2000-01-03', 100, 1);
 
--- лайки: film2 > film3 > film1
-INSERT INTO likes (film_id, user_id) VALUES
-                                         (1,1),
-                                         (2,1),(2,2),(2,3),(2,4),(2,5),
-                                         (3,1),(3,2),(3,3);
+INSERT INTO likes (film_id, user_id)
+VALUES (1, 1),
+       (2, 1),
+       (2, 2),
+       (2, 3),
+       (2, 4),
+       (2, 5),
+       (3, 1),
+       (3, 2),
+       (3, 3);

@@ -310,22 +310,22 @@ public class FilmDbStorage implements FilmStorage {
         String pattern = "%" + normalized + "%";
 
         StringBuilder sql = new StringBuilder("""
-            SELECT f.id, f.name, f.description, f.release_date, f.duration,
-                   mr.id AS mpa_id, mr.name AS mpa_name,
-                   COUNT(DISTINCT l.user_id) AS likes_cnt
-            FROM films f
-            LEFT JOIN mpa_ratings mr ON mr.id = f.mpa_rating_id
-            LEFT JOIN likes l ON l.film_id = f.id
-            """);
+                SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                       mr.id AS mpa_id, mr.name AS mpa_name,
+                       COUNT(DISTINCT l.user_id) AS likes_cnt
+                FROM films f
+                LEFT JOIN mpa_ratings mr ON mr.id = f.mpa_rating_id
+                LEFT JOIN likes l ON l.film_id = f.id
+                """);
 
         List<Object> params = new ArrayList<>();
 
         boolean searchByDirector = searchBy.contains(SearchBy.DIRECTOR);
         if (searchByDirector) {
             sql.append("""
-                LEFT JOIN film_directors fd ON fd.film_id = f.id
-                LEFT JOIN directors d ON d.id = fd.director_id
-                """);
+                    LEFT JOIN film_directors fd ON fd.film_id = f.id
+                    LEFT JOIN directors d ON d.id = fd.director_id
+                    """);
         }
 
         sql.append(" WHERE ");
@@ -345,16 +345,12 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         sql.append("""
-            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, mr.id, mr.name
-            ORDER BY likes_cnt DESC, f.release_date DESC, f.id
-            """);
+                GROUP BY f.id, f.name, f.description, f.release_date, f.duration, mr.id, mr.name
+                ORDER BY likes_cnt DESC, f.release_date DESC, f.id
+                """);
 
         return new SearchSql(sql.toString(), params.toArray());
     }
-
-    private record SearchSql(String sql, Object[] params) {}
-
-
 
     @Override
     public Collection<Film> findCommonFilms(long userId, long friendId) {
@@ -490,5 +486,8 @@ public class FilmDbStorage implements FilmStorage {
                     batch
             );
         }
+    }
+
+    private record SearchSql(String sql, Object[] params) {
     }
 }
