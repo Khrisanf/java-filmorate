@@ -29,13 +29,6 @@ public class FilmService {
     private final FeedService feedService;
     private final DirectorService directorService;
 
-    private static Set<Film> refillFilmsToCheck(Set<Film> filmsToCheck, Collection<Film> userLikes, Collection<Film> otherUserLikes) {
-        filmsToCheck.clear();
-        filmsToCheck.addAll(userLikes);
-        filmsToCheck.addAll(otherUserLikes);
-        return filmsToCheck;
-    }
-
     private static double calculateDistanceToOtherUser(Set<Film> filmsToCheck, Collection<Film> userLikes, Collection<Film> otherUserLikes) {
         double distanceToOtherUser = 0;
         for (Film film : filmsToCheck) {
@@ -271,7 +264,9 @@ public class FilmService {
             if (otherUserLikes.isEmpty()) {
                 continue;
             }
-            filmsToCheck = refillFilmsToCheck(filmsToCheck, userLikes, otherUserLikes);
+            filmsToCheck.clear();
+            filmsToCheck.addAll(userLikes);
+            filmsToCheck.retainAll(otherUserLikes);
             double distanceToOtherUser = calculateDistanceToOtherUser(filmsToCheck, userLikes, otherUserLikes);
             neighborDistance.put(distanceToOtherUser, user);
         }
