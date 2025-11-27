@@ -1,3 +1,16 @@
+DELETE
+FROM likes;
+DELETE
+FROM film_genres;
+DELETE
+FROM films;
+DELETE
+FROM users;
+DELETE
+FROM genres;
+DELETE
+FROM mpa_ratings;
+
 INSERT INTO users (id, email, login, name, birthday)
 VALUES (1, 'u1@mail.ru', 'user1', 'User 1', '1990-01-01'),
        (2, 'u2@mail.ru', 'user2', 'User 2', '1990-01-01'),
