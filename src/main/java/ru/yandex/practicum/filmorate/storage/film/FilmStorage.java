@@ -1,9 +1,12 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
+import ru.yandex.practicum.filmorate.model.SearchBy;
 import ru.yandex.practicum.filmorate.model.film.Film;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface FilmStorage {
     Film create(Film film);
@@ -29,6 +32,8 @@ public interface FilmStorage {
     Collection<Film> findFilmsByDirectorSortedByYear(int directorId);
 
     Collection<Film> findFilmsByDirectorSortedByLikes(int directorId);
+
+    List<Film> search(String query, Set<SearchBy> searchBy);
 
     Collection<Film> findCommonFilms(long userId, long friendId);
 }

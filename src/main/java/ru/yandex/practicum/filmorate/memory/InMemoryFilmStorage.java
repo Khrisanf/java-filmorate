@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.memory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
+import ru.yandex.practicum.filmorate.model.SearchBy;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -178,6 +179,11 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     @Override
     public Collection<Film> findCommonFilms(long userId, long friendId) {
+        return List.of();
+    }
+
+    @Override
+    public List<Film> search(String query, Set<SearchBy> searchBy) {
         return List.of();
     }
 

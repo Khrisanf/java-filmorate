@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
+import ru.yandex.practicum.filmorate.model.SearchBy;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.event.EventOperation;
 import ru.yandex.practicum.filmorate.model.event.EventType;
@@ -286,4 +287,20 @@ public class FilmService {
         Collection<Film> otherUserLikes = filmStorage.findLikesByUserId(otherUserId);
         return otherUserLikes.stream().filter(f -> !userLikes.contains(f)).toList();
     }
+
+    @Transactional(readOnly = true)
+    public List<Film> search(String query, Set<SearchBy> searchBy) {
+        if (query == null || query.isBlank() || searchBy == null || searchBy.isEmpty()) {
+            return List.of();
+        }
+        List<Film> films = filmStorage.search(query, searchBy);
+        films.forEach(film -> film.setDirectors(filterExistingDirectors(film.getDirectors())));
+        films.forEach(f -> log.info(
+                "Search result film id={}, name={}, likes={}, date={}",
+                f.getId(), f.getName(), f.getLikes().size(), f.getReleaseDate()
+        ));
+
+        return films;
+    }
+
 }

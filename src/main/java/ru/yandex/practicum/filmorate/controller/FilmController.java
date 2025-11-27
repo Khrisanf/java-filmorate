@@ -4,11 +4,16 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.model.SearchBy;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/films")
@@ -82,4 +87,23 @@ public class FilmController {
         Collection<Film> films = filmService.getFilmsByDirector(directorId, sortBy);
         return ResponseEntity.ok(films);
     }
+
+    @GetMapping("/search")
+    public List<Film> searchFilms(
+            @RequestParam String query,
+            @RequestParam String by
+    ) {
+        Set<SearchBy> searchBy = parseSearchBy(by);
+        return filmService.search(query, searchBy);
+    }
+
+    private Set<SearchBy> parseSearchBy(String by) {
+        return Arrays.stream(by.split(","))
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .map(SearchBy::valueOf)
+                .collect(Collectors.toSet());
+    }
 }
+
+

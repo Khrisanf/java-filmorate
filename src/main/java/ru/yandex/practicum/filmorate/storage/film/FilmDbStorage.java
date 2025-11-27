@@ -7,6 +7,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
+import ru.yandex.practicum.filmorate.model.SearchBy;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.Genre;
 import ru.yandex.practicum.filmorate.model.film.MpaRating;
@@ -281,6 +282,79 @@ public class FilmDbStorage implements FilmStorage {
         loadDirectorsBulk(films);
         return films;
     }
+
+    // большой метод, разделили на вспомогательные
+    @Override
+    public List<Film> search(String query, Set<SearchBy> searchBy) {
+        String normalized = query == null ? "" : query.toLowerCase();
+        if (normalized.isEmpty() || searchBy == null || searchBy.isEmpty()) {
+            return List.of();
+        }
+
+        SearchSql searchSql = buildSearchSql(normalized, searchBy);
+
+        List<Film> films = jdbcTemplate.query(
+                searchSql.sql(),
+                (rs, rn) -> mapRowToFilm(rs),
+                searchSql.params()
+        );
+
+        loadGenresBulk(films);
+        loadLikesBulk(films);
+        loadDirectorsBulk(films);
+
+        return films;
+    }
+
+    private SearchSql buildSearchSql(String normalized, Set<SearchBy> searchBy) {
+        String pattern = "%" + normalized + "%";
+
+        StringBuilder sql = new StringBuilder("""
+            SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                   mr.id AS mpa_id, mr.name AS mpa_name,
+                   COUNT(DISTINCT l.user_id) AS likes_cnt
+            FROM films f
+            LEFT JOIN mpa_ratings mr ON mr.id = f.mpa_rating_id
+            LEFT JOIN likes l ON l.film_id = f.id
+            """);
+
+        List<Object> params = new ArrayList<>();
+
+        boolean searchByDirector = searchBy.contains(SearchBy.DIRECTOR);
+        if (searchByDirector) {
+            sql.append("""
+                LEFT JOIN film_directors fd ON fd.film_id = f.id
+                LEFT JOIN directors d ON d.id = fd.director_id
+                """);
+        }
+
+        sql.append(" WHERE ");
+
+        boolean hasCondition = false;
+        if (searchBy.contains(SearchBy.TITLE)) {
+            sql.append("LOWER(f.name) LIKE ?");
+            params.add(pattern);
+            hasCondition = true;
+        }
+        if (searchByDirector) {
+            if (hasCondition) {
+                sql.append(" OR ");
+            }
+            sql.append("LOWER(d.name) LIKE ?");
+            params.add(pattern);
+        }
+
+        sql.append("""
+            GROUP BY f.id, f.name, f.description, f.release_date, f.duration, mr.id, mr.name
+            ORDER BY likes_cnt DESC, f.release_date DESC, f.id
+            """);
+
+        return new SearchSql(sql.toString(), params.toArray());
+    }
+
+    private record SearchSql(String sql, Object[] params) {}
+
+
 
     @Override
     public Collection<Film> findCommonFilms(long userId, long friendId) {
