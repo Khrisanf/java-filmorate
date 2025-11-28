@@ -3,10 +3,7 @@ package ru.yandex.practicum.filmorate.storage.film;
 import ru.yandex.practicum.filmorate.model.SearchBy;
 import ru.yandex.practicum.filmorate.model.film.Film;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public interface FilmStorage {
     Film create(Film film);
@@ -25,7 +22,7 @@ public interface FilmStorage {
 
     Collection<Film> findPopular(int count);
 
-    Collection<Film> findLikesByUserId(long userId);
+    Collection<Long> findFilmIdsLikedByUser(long userId);
 
     Collection<Film> findPopular(int count, Integer genreId, Integer year);
 
@@ -36,4 +33,9 @@ public interface FilmStorage {
     List<Film> search(String query, Set<SearchBy> searchBy);
 
     Collection<Film> findCommonFilms(long userId, long friendId);
+
+    Map<Long, Long> findCommonLikesCountByFilmIds(Long userIdToExclude, Collection<Long> filmIds);
+
+    List<Film> findFilmsThatUserHasNotWatchedAndTheOtherWatched(long userId, long otherUserId);
+
 }

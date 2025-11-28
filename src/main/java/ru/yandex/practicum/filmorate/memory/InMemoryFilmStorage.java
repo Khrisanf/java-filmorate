@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
@@ -72,6 +73,16 @@ public class InMemoryFilmStorage implements FilmStorage {
         }
         directorStorage.updateFilmDirectors(id, Set.of());
     }
+
+    @Override
+    public Map<Long, Long> findCommonLikesCountByFilmIds(Long userIdToExclude, Collection<Long> filmIds) {
+        return films.values().stream()
+                .flatMap(film -> film.getLikes().stream())
+                .collect(Collectors.groupingBy(
+                        Function.identity(),
+                        Collectors.counting()));
+    }
+
 
     @Override
     public Film addLike(long filmId, long userId) {
@@ -143,16 +154,22 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Collection<Film> findLikesByUserId(long userId) {
+    public Collection<Long> findFilmIdsLikedByUser(long userId) {
         Collection<Film> likedFilms = new ArrayList<>();
         for (Film film : films.values()) {
             if (film.getLikes().contains(userId)) {
                 likedFilms.add(film);
             }
         }
-        return likedFilms;
+        return likedFilms.stream().map(Film::getId).toList();
     }
 
+    @Override
+    public List<Film> findFilmsThatUserHasNotWatchedAndTheOtherWatched(long userId, long otherUserId) {
+        Collection<Long> userLikes = findFilmIdsLikedByUser(userId);
+        Collection<Long> otherUserLikes = findFilmIdsLikedByUser(otherUserId);
+        return otherUserLikes.stream().filter(f -> !userLikes.contains(f)).map(films::get).toList();
+    }
 
     @Override
     public Collection<Film> findFilmsByDirectorSortedByYear(int directorId) {

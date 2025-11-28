@@ -169,7 +169,18 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Collection<Film> findLikesByUserId(long userId) {
+    public Collection<Long> findFilmIdsLikedByUser(long userId) {
+        final String sql = """
+                    SELECT f.id
+                    FROM films f
+                    LEFT JOIN likes l ON l.film_id = f.id
+                    WHERE l.user_id = ?
+                """;
+        return jdbcTemplate.query(sql, (rs, rn) -> rs.getLong("id"), userId);
+    }
+
+    @Override
+    public List<Film> findFilmsThatUserHasNotWatchedAndTheOtherWatched(long userId, long otherUserId) {
         final String sql = """
                     SELECT f.id, f.name, f.description, f.release_date, f.duration,
                            mr.id AS mpa_id, mr.name AS mpa_name,
@@ -178,15 +189,18 @@ public class FilmDbStorage implements FilmStorage {
                     LEFT JOIN mpa_ratings mr ON mr.id = f.mpa_rating_id
                     LEFT JOIN likes l ON l.film_id = f.id
                     WHERE l.user_id = ?
+                    AND f.id NOT IN (
+                        SELECT f2.id
+                        FROM films f2
+                        LEFT JOIN likes l2 ON l2.film_id = f2.id
+                        WHERE l2.user_id = ?
+                    )
                     GROUP BY f.id, f.name, f.description, f.release_date, f.duration, mr.id, mr.name
                 """;
-        List<Film> films = jdbcTemplate.query(sql, (rs, rn) -> mapRowToFilm(rs), userId);
+        List<Film> films = jdbcTemplate.query(sql, (rs, rn) -> mapRowToFilm(rs), otherUserId, userId);
         loadGenresBulk(films);
-        loadLikesBulk(films);
-        loadDirectorsBulk(films);
         return films;
     }
-
 
     // overload
     @Override
@@ -377,6 +391,32 @@ public class FilmDbStorage implements FilmStorage {
         List<Film> films = jdbcTemplate.query(sql, (rs, rn) -> mapRowToFilm(rs), userId, friendId);
         loadGenresBulk(films);
         return films;
+    }
+
+    public Map<Long, Long> findCommonLikesCountByFilmIds(Long userIdToExclude, Collection<Long> filmIds) {
+        String placeholders = filmIds.stream()
+                .map(id -> "?")
+                .collect(Collectors.joining(", "));
+        final String sql = String.format("""
+                    SELECT user_id, COUNT(film_id) as count
+                    FROM likes
+                    WHERE user_id <> ?
+                    AND film_id IN (%s)
+                    GROUP BY user_id;
+                """, placeholders);
+        Object[] args = new Object[filmIds.size() + 1];
+        args[0] = userIdToExclude;
+        int idx = 1;
+        for (Long id : filmIds) {
+            args[idx++] = id;
+        }
+        return jdbcTemplate.query(sql, (ResultSet rs) -> {
+            HashMap<Long, Long> results = new HashMap<>();
+            while (rs.next()) {
+                results.put(rs.getLong("user_id"), rs.getLong("count"));
+            }
+            return results;
+        }, args);
     }
 
     private Film mapRowToFilm(ResultSet rs) throws SQLException {
