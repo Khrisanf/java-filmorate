@@ -10,7 +10,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.event.EventOperation;
 import ru.yandex.practicum.filmorate.model.event.EventType;
 import ru.yandex.practicum.filmorate.model.event.FeedEvent;
-import ru.yandex.practicum.filmorate.model.event.FeedEventResponse;
 import ru.yandex.practicum.filmorate.storage.user.FeedEventStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -40,17 +39,17 @@ class FeedServiceTest {
         Long userId = 1L;
         when(userStorage.findById(userId)).thenReturn(Optional.of(mock(User.class)));
         List<FeedEvent> mockEvents = Arrays.asList(
-                createFeedEvent(1L, userId, 1L, EventType.LIKE, EventOperation.ADD, 10L, 1000L),
-                createFeedEvent(2L, userId, 1L, EventType.FRIEND, EventOperation.ADD, 20L, 2000L)
+                createFeedEvent(1L, userId, EventType.LIKE, EventOperation.ADD, 10L, 1000L),
+                createFeedEvent(2L, userId, EventType.FRIEND, EventOperation.ADD, 20L, 2000L)
         );
         when(feedEventStorage.findByUserIdOrderByTimestampAsc(userId)).thenReturn(mockEvents);
 
-        List<FeedEventResponse> result = feedService.getUserFeed(userId);
+        List<FeedEvent> result = feedService.getUserFeed(userId);
 
         assertNotNull(result);
         assertEquals(2, result.size());
 
-        FeedEventResponse firstEvent = result.get(0);
+        FeedEvent firstEvent = result.get(0);
         assertEquals(1L, firstEvent.getEventId());
         assertEquals(1L, firstEvent.getUserId());
         assertEquals(EventType.LIKE, firstEvent.getEventType());
@@ -67,7 +66,7 @@ class FeedServiceTest {
         when(userStorage.findById(userId)).thenReturn(Optional.of(mock(User.class)));
         when(feedEventStorage.findByUserIdOrderByTimestampAsc(userId)).thenReturn(Collections.emptyList());
 
-        List<FeedEventResponse> result = feedService.getUserFeed(userId);
+        List<FeedEvent> result = feedService.getUserFeed(userId);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -77,21 +76,17 @@ class FeedServiceTest {
     @Test
     void addEvent_shouldSaveEventWithCorrectParameters() {
         Long targetUserId = 1L;
-        Long actorId = 2L;
         EventType eventType = EventType.LIKE;
         EventOperation operation = EventOperation.ADD;
         Long entityId = 10L;
-        String entityType = "FILM";
 
-        feedService.addEvent(targetUserId, actorId, eventType, operation, entityId, entityType);
+        feedService.addEvent(targetUserId, eventType, operation, entityId);
 
         verify(feedEventStorage).save(argThat(event ->
                 event.getUserId().equals(targetUserId) &&
-                        event.getActorId().equals(actorId) &&
                         event.getEventType() == eventType &&
                         event.getOperation() == operation &&
                         event.getEntityId().equals(entityId) &&
-                        event.getEntityType().equals(entityType) &&
                         event.getTimestamp() > 0
         ));
     }
@@ -99,11 +94,10 @@ class FeedServiceTest {
     @Test
     void addEvent_shouldHandleDifferentEventTypes() {
         Long targetUserId = 1L;
-        Long actorId = 1L;
 
-        feedService.addEvent(targetUserId, actorId, EventType.FRIEND, EventOperation.ADD, 20L, "USER");
-        feedService.addEvent(targetUserId, actorId, EventType.REVIEW, EventOperation.UPDATE, 30L, "REVIEW");
-        feedService.addEvent(targetUserId, actorId, EventType.LIKE, EventOperation.REMOVE, 40L, "FILM");
+        feedService.addEvent(targetUserId, EventType.FRIEND, EventOperation.ADD, 20L);
+        feedService.addEvent(targetUserId, EventType.REVIEW, EventOperation.UPDATE, 30L);
+        feedService.addEvent(targetUserId, EventType.LIKE, EventOperation.REMOVE, 40L);
 
         verify(feedEventStorage, times(3)).save(any(FeedEvent.class));
     }
@@ -113,13 +107,13 @@ class FeedServiceTest {
         Long userId = 1L;
         when(userStorage.findById(userId)).thenReturn(Optional.of(mock(User.class)));
         List<FeedEvent> mockEvents = Arrays.asList(
-                createFeedEvent(1L, userId, 1L, EventType.LIKE, EventOperation.ADD, 10L, 1000L),    // самое старое
-                createFeedEvent(2L, userId, 1L, EventType.FRIEND, EventOperation.ADD, 20L, 2000L),  // среднее
-                createFeedEvent(3L, userId, 1L, EventType.REVIEW, EventOperation.ADD, 30L, 3000L)   // самое новое
+                createFeedEvent(1L, userId, EventType.LIKE, EventOperation.ADD, 10L, 1000L),    // самое старое
+                createFeedEvent(2L, userId,  EventType.FRIEND, EventOperation.ADD, 20L, 2000L),  // среднее
+                createFeedEvent(3L, userId,  EventType.REVIEW, EventOperation.ADD, 30L, 3000L)   // самое новое
         );
         when(feedEventStorage.findByUserIdOrderByTimestampAsc(userId)).thenReturn(mockEvents);
 
-        List<FeedEventResponse> result = feedService.getUserFeed(userId);
+        List<FeedEvent> result = feedService.getUserFeed(userId);
 
         assertEquals(3, result.size());
         assertEquals(1000L, result.get(0).getTimestamp());
@@ -134,7 +128,7 @@ class FeedServiceTest {
 
         long beforeCall = System.currentTimeMillis();
 
-        feedService.addEvent(targetUserId, actorId, EventType.LIKE, EventOperation.ADD, 10L, "FILM");
+        feedService.addEvent(targetUserId, EventType.LIKE, EventOperation.ADD, 10L);
 
         verify(feedEventStorage).save(argThat(event ->
                 event.getTimestamp() >= beforeCall &&
@@ -142,16 +136,14 @@ class FeedServiceTest {
         ));
     }
 
-    private FeedEvent createFeedEvent(Long eventId, Long userId, Long actorId, EventType eventType,
+    private FeedEvent createFeedEvent(Long eventId, Long userId, EventType eventType,
                                       EventOperation operation, Long entityId, Long timestamp) {
         return FeedEvent.builder()
                 .eventId(eventId)
                 .userId(userId)
-                .actorId(actorId)
                 .eventType(eventType)
                 .operation(operation)
                 .entityId(entityId)
-                .entityType("FILM")
                 .timestamp(timestamp)
                 .build();
     }

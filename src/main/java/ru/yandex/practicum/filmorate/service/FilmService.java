@@ -87,7 +87,7 @@ public class FilmService {
     public Film addLike(long filmId, long userId) {
         ensureFilmExists(filmId);
         ensureUserExists(userId);
-        feedService.addEvent(userId, userId, EventType.LIKE, EventOperation.ADD, filmId, "FILM");
+        feedService.addEvent(userId, EventType.LIKE, EventOperation.ADD, filmId);
         return filmStorage.addLike(filmId, userId);
     }
 
@@ -95,7 +95,7 @@ public class FilmService {
     public Film removeLike(long filmId, long userId) {
         ensureFilmExists(filmId);
         ensureUserExists(userId);
-        feedService.addEvent(userId, userId, EventType.LIKE, EventOperation.REMOVE, filmId, "FILM");
+        feedService.addEvent(userId, EventType.LIKE, EventOperation.REMOVE, filmId);
         return filmStorage.removeLike(filmId, userId);
     }
 

@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.model.event.FeedEventResponse;
+import ru.yandex.practicum.filmorate.model.event.FeedEvent;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.service.FilmService;
@@ -50,8 +50,8 @@ public class UserController {
     }
 
     @GetMapping("/{id}/feed")
-    public ResponseEntity<List<FeedEventResponse>> getUserFeed(@PathVariable("id") Long userId) {
-        List<FeedEventResponse> feed = feedService.getUserFeed(userId);
+    public ResponseEntity<List<FeedEvent>> getUserFeed(@PathVariable("id") Long userId) {
+        List<FeedEvent> feed = feedService.getUserFeed(userId);
         return ResponseEntity.ok(feed);
     }
 

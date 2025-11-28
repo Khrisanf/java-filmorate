@@ -9,8 +9,8 @@ public class TestFeedService extends FeedService {
     }
 
     @Override
-    public void addEvent(Long targetUserId, Long actorId, EventType eventType,
-                         EventOperation operation, Long entityId, String entityType) {
+    public void addEvent(Long targetUserId, EventType eventType,
+                         EventOperation operation, Long entityId) {
         System.out.println("Feed event skipped for testing: " + eventType);
     }
 }

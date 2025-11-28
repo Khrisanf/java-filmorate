@@ -37,11 +37,9 @@ public class ReviewService {
         Review created = reviewStorage.save(review);
 
         feedService.addEvent(created.getUserId(),
-                created.getUserId(),
                 EventType.REVIEW,
                 EventOperation.ADD,
-                created.getReviewId(),
-                "REVIEW");
+                created.getReviewId());
 
         log.info("Review with id {} created.", created.getReviewId());
 
@@ -57,11 +55,9 @@ public class ReviewService {
         Review updated = reviewStorage.update(existingReview);
 
         feedService.addEvent(updated.getUserId(),
-                updated.getUserId(),
                 EventType.REVIEW,
                 EventOperation.UPDATE,
-                updated.getReviewId(),
-                "REVIEW");
+                updated.getReviewId());
         log.info("Review with id {} updated", updated.getReviewId());
         return updated;
     }
@@ -72,11 +68,9 @@ public class ReviewService {
         log.info("Deleting review with id {}", reviewId);
         Review review = getReview(reviewId);
         feedService.addEvent(review.getUserId(),
-                review.getUserId(),
                 EventType.REVIEW,
                 EventOperation.REMOVE,
-                reviewId,
-                "REVIEW");
+                reviewId);
         reviewStorage.delete(reviewId);
         log.info("Review with id {} deleted", reviewId);
     }

@@ -75,7 +75,7 @@ public class UserService {
         log.info("===Adding friends to friends list: id={}", userId);
         ensureUserExists(userId);
         ensureUserExists(friendId);
-        feedService.addEvent(userId, userId, EventType.FRIEND, EventOperation.ADD, friendId, "USER");
+        feedService.addEvent(userId, EventType.FRIEND, EventOperation.ADD, friendId);
 
         return userStorage.addFriend(userId, friendId);
     }
@@ -86,7 +86,7 @@ public class UserService {
 
         ensureUserExists(userId);
         ensureUserExists(friendId);
-        feedService.addEvent(userId, userId, EventType.FRIEND, EventOperation.REMOVE, friendId, "USER");
+        feedService.addEvent(userId, EventType.FRIEND, EventOperation.REMOVE, friendId);
         return userStorage.removeFriend(userId, friendId);
     }
 
