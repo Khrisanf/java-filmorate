@@ -477,9 +477,9 @@ public class FilmDbStorage implements FilmStorage {
 
         String sql = """
         SELECT fd.film_id, d.id AS director_id, d.name AS director_name
-        FROM film_directors fd 
-        JOIN directors d ON d.id = fd.director_id 
-        WHERE fd.film_id IN (%s) 
+        FROM film_directors fd
+        JOIN directors d ON d.id = fd.director_id
+        WHERE fd.film_id IN (%s)
         ORDER BY fd.film_id, d.id
         """.formatted(inClause);
 
