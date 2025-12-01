@@ -229,6 +229,12 @@ public class FilmService {
             return List.of();
         }
         List<Film> films = filmStorage.search(query, searchBy);
+
+        // Фильтруем фильмы, у которых есть только удаленные режиссеры
+        films = films.stream()
+                .filter(film -> hasExistingDirectors(film))
+                .collect(Collectors.toList());
+
         films.forEach(f -> log.info(
                 "Search result film id={}, name={}, likes={}, date={}",
                 f.getId(), f.getName(), f.getLikes().size(), f.getReleaseDate()
@@ -237,4 +243,12 @@ public class FilmService {
         return films;
     }
 
+    private boolean hasExistingDirectors(Film film) {
+        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
+            return true;
+        }
+
+        return film.getDirectors().stream()
+                .anyMatch(director -> director.getName() != null);
+    }
 }
