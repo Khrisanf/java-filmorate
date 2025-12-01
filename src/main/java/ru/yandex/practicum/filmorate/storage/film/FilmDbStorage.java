@@ -8,6 +8,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.SearchBy;
+import ru.yandex.practicum.filmorate.model.film.Director;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.Genre;
 import ru.yandex.practicum.filmorate.model.film.MpaRating;
@@ -202,7 +203,6 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
-    // overload
     @Override
     public Collection<Film> findPopular(int count, Integer genreId, Integer year) {
         StringBuilder sql = new StringBuilder("""
@@ -473,11 +473,27 @@ public class FilmDbStorage implements FilmStorage {
         if (films.isEmpty()) return;
 
         List<Long> filmIds = films.stream().map(Film::getId).toList();
-        Map<Long, Set<ru.yandex.practicum.filmorate.model.film.Director>> directorsByFilm = new HashMap<>();
+        String inClause = filmIds.stream().map(id -> "?").collect(Collectors.joining(","));
 
-        filmIds.forEach(id ->
-                directorsByFilm.put(id, directorStorage.findDirectorsByFilmId(id))
-        );
+        String sql = """
+        SELECT fd.film_id, d.id AS director_id, d.name AS director_name
+        FROM film_directors fd 
+        JOIN directors d ON d.id = fd.director_id 
+        WHERE fd.film_id IN (%s) 
+        ORDER BY fd.film_id, d.id
+        """.formatted(inClause);
+
+        Map<Long, Set<Director>> directorsByFilm = new HashMap<>();
+
+        jdbcTemplate.query(sql, filmIds.toArray(), rs -> {
+            long filmId = rs.getLong("film_id");
+            Director director = Director.builder()
+                    .id(rs.getInt("director_id"))
+                    .name(rs.getString("director_name"))
+                    .build();
+
+            directorsByFilm.computeIfAbsent(filmId, k -> new LinkedHashSet<>()).add(director);
+        });
 
         films.forEach(film ->
                 film.setDirectors(directorsByFilm.getOrDefault(film.getId(), new LinkedHashSet<>()))

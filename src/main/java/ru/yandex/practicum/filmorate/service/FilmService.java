@@ -51,8 +51,6 @@ public class FilmService {
     @Transactional(readOnly = true)
     public Film findById(long id) {
         Film film = ensureFilmExists(id);
-        // Фильтруем только существующих режиссеров
-        film.setDirectors(filterExistingDirectors(film.getDirectors()));
         log.debug("Film fetched: id={}", id);
         return film;
     }
@@ -60,8 +58,6 @@ public class FilmService {
     @Transactional(readOnly = true)
     public Collection<Film> findAll() {
         Collection<Film> all = filmStorage.findAll();
-        // Фильтруем только существующих режиссеров для всех фильмов
-        all.forEach(film -> film.setDirectors(filterExistingDirectors(film.getDirectors())));
         log.info("Get all films: count={}", all.size());
         return all;
     }
@@ -94,8 +90,6 @@ public class FilmService {
             throw new IllegalArgumentException("Count must be greater than 0");
         }
         Collection<Film> popular = filmStorage.findPopular(count);
-        // Фильтруем только существующих режиссеров
-        popular.forEach(film -> film.setDirectors(filterExistingDirectors(film.getDirectors())));
         return popular;
     }
 
@@ -107,10 +101,7 @@ public class FilmService {
         if (genreId == null && year == null) {
             return getPopular(count);
         }
-
         Collection<Film> popular = filmStorage.findPopular(count, genreId, year);
-        // Фильтруем только существующих режиссеров
-        popular.forEach(film -> film.setDirectors(filterExistingDirectors(film.getDirectors())));
         return popular;
     }
 
@@ -128,7 +119,6 @@ public class FilmService {
             throw new IllegalArgumentException("Invalid sort parameter. Use 'year' or 'likes'");
         }
 
-        films.forEach(film -> film.setDirectors(filterExistingDirectors(film.getDirectors())));
         return films;
     }
 
@@ -138,8 +128,6 @@ public class FilmService {
         Optional<User> userIdWithMostSameLikes = findUserWithMostSameLikes(userId);
         if (userIdWithMostSameLikes.isPresent()) {
             List<Film> recommendations = findNotSeenFilms(userId, userIdWithMostSameLikes.get().getId());
-            // Фильтруем только существующих режиссеров
-            recommendations.forEach(film -> film.setDirectors(filterExistingDirectors(film.getDirectors())));
             return recommendations;
         } else {
             return Collections.emptyList();
@@ -221,26 +209,6 @@ public class FilmService {
         return film;
     }
 
-    // Новый метод для фильтрации существующих режиссеров
-    private Set<Director> filterExistingDirectors(Set<Director> directors) {
-        if (directors == null || directors.isEmpty()) {
-            return new LinkedHashSet<>();
-        }
-
-        return directors.stream()
-                .filter(Objects::nonNull)
-                .filter(d -> d.getId() != null)
-                .filter(d -> {
-                    try {
-                        directorService.findById(d.getId());
-                        return true;
-                    } catch (NotFoundException e) {
-                        return false; // Режиссер был удален - исключаем его
-                    }
-                })
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
     private Optional<User> findUserWithMostSameLikes(long userId) {
         Collection<Long> filmIdsWithUserLikes = filmStorage.findFilmIdsLikedByUser(userId);
         Map<Long, Long> commonLikesCount = filmStorage.findCommonLikesCountByFilmIds(userId, filmIdsWithUserLikes);
@@ -261,7 +229,6 @@ public class FilmService {
             return List.of();
         }
         List<Film> films = filmStorage.search(query, searchBy);
-        films.forEach(film -> film.setDirectors(filterExistingDirectors(film.getDirectors())));
         films.forEach(f -> log.info(
                 "Search result film id={}, name={}, likes={}, date={}",
                 f.getId(), f.getName(), f.getLikes().size(), f.getReleaseDate()
