@@ -225,7 +225,7 @@ public class FilmService {
 
     @Transactional(readOnly = true)
     public List<Film> search(String query, Set<SearchBy> searchBy) {
-        if (query == null || query.isBlank() ||searchBy == null || searchBy.isEmpty()) {
+        if (query == null || query.isBlank() || searchBy == null || searchBy.isEmpty()) {
             return List.of();
         }
         List<Film> films = filmStorage.search(query, searchBy);
