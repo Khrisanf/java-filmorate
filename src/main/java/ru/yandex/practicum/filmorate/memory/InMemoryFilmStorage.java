@@ -3,12 +3,15 @@ package ru.yandex.practicum.filmorate.memory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
+import ru.yandex.practicum.filmorate.model.SearchBy;
 import ru.yandex.practicum.filmorate.model.film.Film;
+import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
@@ -17,34 +20,50 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     private final Map<Long, Film> films = new ConcurrentHashMap<>();
     private final AtomicLong nextId = new AtomicLong(0);
+    private final DirectorStorage directorStorage;
+
+    public InMemoryFilmStorage(DirectorStorage directorStorage) {
+        this.directorStorage = directorStorage;
+    }
 
     @Override
     public Film create(Film film) {
         film.setId(nextId.incrementAndGet());
         if (film.getLikes() == null) film.setLikes(new HashSet<>());
         if (film.getGenres() == null) film.setGenres(new LinkedHashSet<>());
+        if (film.getDirectors() == null) film.setDirectors(new LinkedHashSet<>());
         films.put(film.getId(), film);
+        directorStorage.updateFilmDirectors(film.getId(), film.getDirectors());
         return film;
     }
-
 
     @Override
     public Film update(Film newFilm) {
         if (!films.containsKey(newFilm.getId())) {
             throw new NotFoundException("Film " + newFilm.getId() + " not found");
         }
+        if (newFilm.getDirectors() == null) newFilm.setDirectors(new LinkedHashSet<>());
         films.put(newFilm.getId(), newFilm);
+        directorStorage.updateFilmDirectors(newFilm.getId(), newFilm.getDirectors());
         return newFilm;
     }
 
     @Override
     public Optional<Film> findById(long id) {
-        return Optional.ofNullable(films.get(id));
+        Film film = films.get(id);
+        if (film != null) {
+            film.setDirectors(directorStorage.findDirectorsByFilmId(id));
+        }
+        return Optional.ofNullable(film);
     }
 
     @Override
     public Collection<Film> findAll() {
-        return films.values();
+        Collection<Film> allFilms = films.values();
+        allFilms.forEach(film ->
+                film.setDirectors(directorStorage.findDirectorsByFilmId(film.getId()))
+        );
+        return allFilms;
     }
 
     @Override
@@ -52,7 +71,18 @@ public class InMemoryFilmStorage implements FilmStorage {
         if (films.remove(id) == null) {
             throw new NotFoundException("Film " + id + " not found");
         }
+        directorStorage.updateFilmDirectors(id, Set.of());
     }
+
+    @Override
+    public Map<Long, Long> findCommonLikesCountByFilmIds(Long userIdToExclude, Collection<Long> filmIds) {
+        return films.values().stream()
+                .flatMap(film -> film.getLikes().stream())
+                .collect(Collectors.groupingBy(
+                        Function.identity(),
+                        Collectors.counting()));
+    }
+
 
     @Override
     public Film addLike(long filmId, long userId) {
@@ -90,6 +120,89 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Collection<Film> findPopular(int count, Integer genreId, Integer year) {
+        return films.values().stream()
+                .filter(film -> {
+                    if (genreId == null) {
+                        return true;
+                    }
+                    if (film.getGenres() == null) {
+                        return false;
+                    }
+                    return film.getGenres().stream()
+                            .filter(Objects::nonNull)
+                            .anyMatch(g -> Objects.equals(g.getId(), genreId));
+                })
+                .filter(film -> {
+                    if (year == null) {
+                        return true;
+                    }
+                    if (film.getReleaseDate() == null) {
+                        return false;
+                    }
+                    return film.getReleaseDate().getYear() == year;
+                })
+                .sorted(
+                        Comparator
+                                .comparingInt((Film f) -> f.getLikes() == null ? 0 : f.getLikes().size())
+                                .reversed()
+                                .thenComparingLong(Film::getId)
+                )
+                .limit(count)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<Long> findFilmIdsLikedByUser(long userId) {
+        Collection<Film> likedFilms = new ArrayList<>();
+        for (Film film : films.values()) {
+            if (film.getLikes().contains(userId)) {
+                likedFilms.add(film);
+            }
+        }
+        return likedFilms.stream().map(Film::getId).toList();
+    }
+
+    @Override
+    public List<Film> findFilmsThatUserHasNotWatchedAndTheOtherWatched(long userId, long otherUserId) {
+        Collection<Long> userLikes = findFilmIdsLikedByUser(userId);
+        Collection<Long> otherUserLikes = findFilmIdsLikedByUser(otherUserId);
+        return otherUserLikes.stream().filter(f -> !userLikes.contains(f)).map(films::get).toList();
+    }
+
+    @Override
+    public Collection<Film> findFilmsByDirectorSortedByYear(int directorId) {
+        return films.values().stream()
+                .filter(film -> film.getDirectors().stream()
+                        .anyMatch(d -> d.getId().equals(directorId)))
+                .sorted(Comparator.comparing(Film::getReleaseDate))
+                .peek(film -> film.setDirectors(directorStorage.findDirectorsByFilmId(film.getId())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<Film> findFilmsByDirectorSortedByLikes(int directorId) {
+        return films.values().stream()
+                .filter(film -> film.getDirectors().stream()
+                        .anyMatch(d -> d.getId().equals(directorId)))
+                .sorted(Comparator
+                        .comparingInt((Film f) -> f.getLikes() == null ? 0 : f.getLikes().size())
+                        .reversed()
+                        .thenComparingLong(Film::getId))
+                .peek(film -> film.setDirectors(directorStorage.findDirectorsByFilmId(film.getId())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<Film> findCommonFilms(long userId, long friendId) {
+        return List.of();
+    }
+
+    @Override
+    public List<Film> search(String query, Set<SearchBy> searchBy) {
+        return List.of();
+    }
 
     private Film getOrThrow(long id) {
         Film film = films.get(id);
